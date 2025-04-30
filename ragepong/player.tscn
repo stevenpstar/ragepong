@@ -1,0 +1,26 @@
+[gd_scene load_steps=4 format=3 uid="uid://cm7458rx6popx"]
+
+[ext_resource type="Texture2D" uid="uid://unvvljsn2iwp" path="res://icon.svg" id="1_4flbx"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_uhqqe"]
+size = Vector2(32, 32)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_4flbx"]
+radius = 157.051
+
+[node name="Player" type="Player" node_paths=PackedStringArray("hittingbox")]
+jump_velocity = -100.0
+hittingbox = NodePath("HitBox")
+metadata/_edit_group_ = true
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.25, 0.25)
+texture = ExtResource("1_4flbx")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_uhqqe")
+
+[node name="HitBox" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HitBox"]
+shape = SubResource("CircleShape2D_4flbx")
