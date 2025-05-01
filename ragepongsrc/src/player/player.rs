@@ -1,6 +1,6 @@
 use core::panic;
 
-use godot::{builtin::Vector2, classes::{ Area2D, CharacterBody2D, ICharacterBody2D, Input, Node2D }, global::{godot_print, move_toward}, obj::{Base, Gd, WithBaseField}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::Vector2, classes::{ AnimatedSprite2D, Area2D, CharacterBody2D, ICharacterBody2D, Input, InputEvent, InputEventJoypadButton, InputEventKey, Node2D }, global::{godot_print, move_toward}, obj::{Base, Gd, WithBaseField}, prelude::{godot_api, GodotClass}};
 
 use crate::{core::gamestate::GameState, player::pong::Pong};
 
@@ -12,10 +12,13 @@ struct Player {
     jump_velocity: f64,
     jump_count: f32,
     jump_counter: f32,
+    mkb: bool,
     #[export]
     gamestate: Option<Gd<GameState>>,
     #[export]
     hittingbox: Option<Gd<Area2D>>,
+    #[export]
+    sprite: Option<Gd<AnimatedSprite2D>>,
     base: Base<CharacterBody2D>,
 }
 
@@ -30,8 +33,10 @@ impl ICharacterBody2D for Player {
             jump_velocity: -200.0,
             jump_count: 4.0,
             jump_counter: 0.0, 
+            mkb: true, // defaults to player using mouse/key board for aiming. Changes dynamically.
             gamestate: None,
             hittingbox: None,
+            sprite: None,
             base,
         }
     }
@@ -49,6 +54,25 @@ impl ICharacterBody2D for Player {
         godot_print!("signal list: ");
     }
 
+    fn input(&mut self, input: Gd<InputEvent>) {
+        let key_event = input.clone().try_cast::<InputEventKey>();
+        match key_event {
+            Ok(_) => {
+                self.mkb = true;
+                godot_print!("Mouse_keyboard!");
+            },
+            Err(_) => {}
+        };
+        let gamepad_event = input.clone().try_cast::<InputEventJoypadButton>();
+        match gamepad_event {
+            Ok(_) => {
+                self.mkb = false;
+                godot_print!("Gamepad button!");
+            },
+            Err(_) => {}
+        };
+    }
+
     fn physics_process(&mut self, delta: f64) {
         
         let input = Input::singleton();
@@ -56,6 +80,8 @@ impl ICharacterBody2D for Player {
             None => panic!("No gamestate!"),
             Some(gs) => gs.bind().get_gamespeed(),
         };
+
+        let on_floor: bool = self.base().is_on_floor();
 
         self.jump(&input);
 
@@ -74,10 +100,54 @@ impl ICharacterBody2D for Player {
             let vel_x = direction * self.speed as f32 * g_speed as f32;
             let vel_y = self.base().get_velocity().y as f32;
             self.base_mut().set_velocity(Vector2::new(vel_x, vel_y));
+            // play run animation
+            let char_sprite: &mut Gd<AnimatedSprite2D> = match &mut self.sprite {
+                None => panic!("No animated sprite attached to player"),
+                Some(anim_sprite) => anim_sprite,
+            };
+            if on_floor {
+                if direction < 0.0 {
+                    char_sprite.set_flip_h(true);
+                } else if direction > 0.0 {
+                    char_sprite.set_flip_h(false);
+                }
+                char_sprite.set_animation("run");
+            } else {
+
+                if direction < 0.0 {
+                    char_sprite.set_flip_h(true);
+                } else if direction > 0.0 {
+                    char_sprite.set_flip_h(false);
+                }
+
+                if vel_y < 0.0 {
+                    char_sprite.set_animation("jump");
+                } else {
+                    char_sprite.set_animation("fall");
+                }
+            }
         } else {
             let vel_x = move_toward(self.base().get_velocity().x as f64, 0.0, self.speed * g_speed);
             let vel_y = self.base().get_velocity().y as f32;
             self.base_mut().set_velocity(Vector2::new(vel_x as f32, vel_y));
+            let char_sprite: &mut Gd<AnimatedSprite2D> = match &mut self.sprite {
+                None => panic!("No animated sprite attached to player"),
+                Some(anim_sprite) => anim_sprite,
+            };
+            if on_floor {
+                if direction < 0.0 {
+                    char_sprite.set_flip_h(true);
+                } else if direction > 0.0 {
+                    char_sprite.set_flip_h(false);
+                }
+                char_sprite.set_animation("idle");
+            } else {
+                if vel_y < 0.0 {
+                    char_sprite.set_animation("jump");
+                } else {
+                    char_sprite.set_animation("fall");
+                }
+            }
         }
 
         {
@@ -89,6 +159,16 @@ impl ICharacterBody2D for Player {
         self.base_mut().move_and_slide();
 
         if input.is_action_just_released("shoot") {
+            let mouse_position = match &self.base_mut().get_viewport() {
+                None => panic!("no viewport"),
+                Some(viewport) => viewport.get_mouse_position(),
+            };
+
+            let mut hit_direction = Vector2::new(mouse_position.x - self.base().get_position().x, 
+                mouse_position.y - self.base().get_position().y);
+
+            hit_direction = hit_direction.normalized();
+
             let h_box = match &self.hittingbox {
                 None => panic!("We should have a hitting box"),
                 Some(hb) => hb,
@@ -97,7 +177,8 @@ impl ICharacterBody2D for Player {
             for ball in balls.iter_shared() {
                 if ball.get_class() == "Pong".into() {
                     let mut b = ball.cast::<Pong>();
-                    b.bind_mut().reverse_direction();
+                    //b.bind_mut().reverse_direction();
+                    b.bind_mut().hit_direction(hit_direction);
                 }
             }
         }

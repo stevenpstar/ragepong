@@ -63,4 +63,10 @@ impl Pong {
             self.vel_x = -self.vel_x;
         }
     }
+
+    #[func]
+    pub fn hit_direction(&mut self, dir: Vector2) {
+        self.vel_x = dir.x;
+        self.vel_y = dir.y;
+    }
 }
