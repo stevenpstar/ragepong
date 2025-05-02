@@ -1,16 +1,17 @@
-use godot::{builtin::Vector2, classes::{CharacterBody2D, ICharacterBody2D}, obj::{Base, Gd, WithBaseField}, prelude::{godot_api, GodotClass}};
-
-use crate::core::gamestate::GameState;
+use godot::{builtin::Vector2, classes::{CharacterBody2D, ICharacterBody2D, Node2D}, obj::{Base, Gd, WithBaseField}, prelude::{godot_api, GodotClass}};
 
 #[derive(GodotClass)]
 #[class(base=CharacterBody2D)]
 pub struct Pong {
     #[export]
     speed: f64,
+    #[export]
+    start_point: Option<Gd<Node2D>>,
+    #[export]
+    start_dir: Vector2,
     vel_x: f32,
     vel_y: f32,
-    #[export]
-    gamestate: Option<Gd<GameState>>,
+    game_speed: f32,
     base: Base<CharacterBody2D>,
 }
 
@@ -19,21 +20,23 @@ impl ICharacterBody2D for Pong {
     fn init(base: Base<CharacterBody2D>) -> Self {
         Self {
             speed: 20.0,
+            start_point: None,
+            start_dir: Vector2::new(0.0, 0.0),
             vel_x: 1.0,
             vel_y: 1.0,
-            gamestate: None,
+            game_speed: 1.0,
             base,
         }
     }
 
+    fn ready(&mut self) {
+        self.reset();
+    }
+
     fn physics_process(&mut self, _delta: f64) {
         {
-            let g_speed = match &self.gamestate {
-                None => 1.0,
-                Some(gs) => gs.bind().get_gamespeed() as f32,
-            };
-            let vel_x: f32 = self.vel_x * g_speed * self.speed as f32;
-            let vel_y: f32 = self.vel_y * g_speed * self.speed as f32;
+            let vel_x: f32 = self.vel_x * self.game_speed * self.speed as f32;
+            let vel_y: f32 = self.vel_y * self.game_speed * self.speed as f32;
             self.base_mut().set_velocity(Vector2::new(vel_x, vel_y));
         }
         self.base_mut().move_and_slide();
@@ -68,5 +71,19 @@ impl Pong {
     pub fn hit_direction(&mut self, dir: Vector2) {
         self.vel_x = dir.x;
         self.vel_y = dir.y;
+    }
+
+    pub fn reset(&mut self) {
+        let position = match &self.start_point {
+            None => Vector2::new(0.0, 0.0),
+            Some(sp) => sp.get_position()
+        };
+        self.base_mut().set_position(position);
+        self.vel_x = self.start_dir.x;
+        self.vel_y = self.start_dir.y;
+    }
+
+    pub fn update_game_speed(&mut self, speed: f32) {
+        self.game_speed = speed;
     }
 }

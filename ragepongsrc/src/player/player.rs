@@ -1,24 +1,29 @@
 use core::panic;
 
-use godot::{builtin::Vector2, classes::{ AnimatedSprite2D, Area2D, CharacterBody2D, ICharacterBody2D, Input, InputEvent, InputEventJoypadButton, InputEventKey, Node2D }, global::{godot_print, move_toward}, obj::{Base, Gd, WithBaseField}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::Vector2, classes::{ AnimatedSprite2D, Area2D, CharacterBody2D, ICharacterBody2D, Input, Node2D }, global::{godot_print, move_toward}, obj::{Base, Gd, WithBaseField, WithUserSignals}, prelude::{godot_api, GodotClass}};
 
-use crate::{core::gamestate::GameState, player::pong::Pong};
+use crate::player::pong::Pong;
 
 #[derive(GodotClass)]
 #[class(base=CharacterBody2D)]
-struct Player {
+pub struct Player {
+    alive: bool,
     speed: f64,
+    game_speed: f32,
     #[export]
     jump_velocity: f64,
     jump_count: f32,
     jump_counter: f32,
-    mkb: bool,
     #[export]
-    gamestate: Option<Gd<GameState>>,
+    mkb: bool,
     #[export]
     hittingbox: Option<Gd<Area2D>>,
     #[export]
+    hurtbox: Option<Gd<Area2D>>,
+    #[export]
     sprite: Option<Gd<AnimatedSprite2D>>,
+    #[export]
+    start_point: Option<Gd<Node2D>>,
     base: Base<CharacterBody2D>,
 }
 
@@ -29,57 +34,60 @@ impl ICharacterBody2D for Player {
         godot_print!("Player Loaded (from rust!)");
 
         Self {
+            alive: true,
             speed: 300.0,
+            game_speed: 1.0,
             jump_velocity: -200.0,
             jump_count: 4.0,
             jump_counter: 0.0, 
             mkb: true, // defaults to player using mouse/key board for aiming. Changes dynamically.
-            gamestate: None,
             hittingbox: None,
+            hurtbox: None,
             sprite: None,
+            start_point: None,
             base,
         }
     }
 
     fn ready(&mut self) {
+        let this = self.to_gd();
+
+
         godot_print!("This should be called on ready");
         let hb: &mut Gd<Area2D> = match &mut self.hittingbox {
-            None => panic!("Hitting box not defined"),
+            None => {
+                godot_print!("Hitting box not defined?");
+                panic!("Heiagea");
+            },
+            Some(hb) => hb
+        };
+
+
+        let hurt: &mut Gd<Area2D> = match &mut self.hurtbox {
+            None => panic!("Hurt box not defeind"),
             Some(hb) => hb
         };
 
         hb.signals().body_entered().connect(move |body| Self::on_body_entered(body));
         hb.signals().body_exited().connect(move |body| Self::on_body_exited(body));
 
-        godot_print!("signal list: ");
-    }
+        hurt.signals()
+            .body_entered()
+            .connect_obj(&this, |s: &mut Self, body| {
+                s.on_hazard_entered(body);
+            });
 
-    fn input(&mut self, input: Gd<InputEvent>) {
-        let key_event = input.clone().try_cast::<InputEventKey>();
-        match key_event {
-            Ok(_) => {
-                self.mkb = true;
-                godot_print!("Mouse_keyboard!");
-            },
-            Err(_) => {}
-        };
-        let gamepad_event = input.clone().try_cast::<InputEventJoypadButton>();
-        match gamepad_event {
-            Ok(_) => {
-                self.mkb = false;
-                godot_print!("Gamepad button!");
-            },
-            Err(_) => {}
-        };
+        // set player spawn
+        self.reset_player();
     }
 
     fn physics_process(&mut self, delta: f64) {
+
+        if !self.alive {
+            return;
+        }
         
         let input = Input::singleton();
-        let g_speed = match &self.gamestate {
-            None => panic!("No gamestate!"),
-            Some(gs) => gs.bind().get_gamespeed(),
-        };
 
         let on_floor: bool = self.base().is_on_floor();
 
@@ -96,8 +104,11 @@ impl ICharacterBody2D for Player {
         }
 
         let direction = input.get_axis("move_left", "move_right");
+        let hit_vert = input.get_axis("hit_up", "hit_down");
+        let hit_horiz = input.get_axis("hit_left", "hit_right");
+
         if direction != 0.0 {
-            let vel_x = direction * self.speed as f32 * g_speed as f32;
+            let vel_x = direction * self.speed as f32 * self.game_speed as f32;
             let vel_y = self.base().get_velocity().y as f32;
             self.base_mut().set_velocity(Vector2::new(vel_x, vel_y));
             // play run animation
@@ -127,7 +138,7 @@ impl ICharacterBody2D for Player {
                 }
             }
         } else {
-            let vel_x = move_toward(self.base().get_velocity().x as f64, 0.0, self.speed * g_speed);
+            let vel_x = move_toward(self.base().get_velocity().x as f64, 0.0, self.speed * self.game_speed as f64);
             let vel_y = self.base().get_velocity().y as f32;
             self.base_mut().set_velocity(Vector2::new(vel_x as f32, vel_y));
             let char_sprite: &mut Gd<AnimatedSprite2D> = match &mut self.sprite {
@@ -152,7 +163,7 @@ impl ICharacterBody2D for Player {
 
         {
             let mut new_vel = self.base().get_velocity();
-            new_vel.y *= g_speed as f32;
+            new_vel.y *= self.game_speed as f32;
             self.base_mut().set_velocity(new_vel);
         }
 
@@ -164,9 +175,18 @@ impl ICharacterBody2D for Player {
                 Some(viewport) => viewport.get_mouse_position(),
             };
 
-            let mut hit_direction = Vector2::new(mouse_position.x - self.base().get_position().x, 
-                mouse_position.y - self.base().get_position().y);
+            let hit_direction_x;
+            let hit_direction_y;
+            if self.mkb {
+                hit_direction_x = mouse_position.x - self.base().get_position().x;
+                hit_direction_y = mouse_position.y - self.base().get_position().y;
+            } else {
+                hit_direction_x = hit_horiz;
+                hit_direction_y = hit_vert;
+            }
 
+            let mut hit_direction = Vector2::new(hit_direction_x, hit_direction_y);
+            
             hit_direction = hit_direction.normalized();
 
             let h_box = match &self.hittingbox {
@@ -181,7 +201,42 @@ impl ICharacterBody2D for Player {
                     b.bind_mut().hit_direction(hit_direction);
                 }
             }
+
+            let hurt_box = match &self.hurtbox {
+                None => panic!("We should have a hurt box"),
+                Some(hb) => hb,
+            };
+
+            let hazards = hurt_box.get_overlapping_bodies();
+            for _hazard in hazards.iter_shared() {
+                godot_print!("Hitting here {}", self.base().get_position());
+            }
         }
+    }
+}
+
+#[godot_api]
+impl Player {
+    #[signal]
+    fn col_something();
+
+    #[signal]
+    pub fn hit_hazard();
+
+    #[func]
+    pub fn reset_player(&mut self) {
+        self.base_mut().set_velocity(Vector2::new(0.0, 0.0));
+        let position = match &self.start_point {
+            None => Vector2::new(0.0, 0.0),
+            Some(sp) => sp.get_position()
+        };
+        self.base_mut().set_position(position);
+        self.alive = true;
+    }
+
+    #[func]
+    pub fn say_hello(&self) {
+        godot_print!("hello");
     }
 }
 
@@ -191,6 +246,12 @@ impl Player {
         if body.get_class() == "Pong".into() {
             godot_print!("ball hit {}", body.get_class());
         }
+    }
+
+    fn on_hazard_entered(&mut self, _body: Gd<Node2D>) {
+        godot_print!("Hazard entered!, we need to emit a signal here");
+        self.alive = false;
+        self.signals().hit_hazard().emit();
     }
 
     fn on_body_exited(body: Gd<Node2D>) {
@@ -208,21 +269,12 @@ impl Player {
     }
 
     fn tick_jump(&mut self) {
-        let g_speed = match &self.gamestate {
-            None => panic!("No gamestate!"),
-            Some(gs) => gs.bind().get_gamespeed() as f32,
-        };
         if self.jump_counter < self.jump_count {
-            self.jump_counter += 1.0 * g_speed;
+            self.jump_counter += 1.0 * self.game_speed;
         }  
     }
 
     fn jump(&mut self, input: &Gd<Input>) {
-
-        let _game_speed = match &self.gamestate {
-            None => panic!("No gamestate!"),
-            Some(gs) => gs.bind().get_gamespeed() as f32,
-        };
 
        if input.is_action_just_pressed("jump") && self.base().is_on_floor() {
            // zero out velocity for new jump
@@ -231,7 +283,6 @@ impl Player {
            self.base_mut().set_velocity(new_vel);
        }
        if input.is_action_pressed("jump") && self.can_jump() {
-           godot_print!("Jumping!");
            let mut new_vel = self.base().get_velocity();
            new_vel.y += self.jump_velocity as f32;
            self.base_mut().set_velocity(new_vel);
@@ -239,4 +290,10 @@ impl Player {
        }
 
     }
+
+    pub fn update_game_speed(&mut self, speed: f32) {
+        self.game_speed = speed;
+    }
+
+
 }
