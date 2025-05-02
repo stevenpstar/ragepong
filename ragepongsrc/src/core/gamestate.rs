@@ -1,4 +1,4 @@
-use godot::{builtin::Array, classes::{INode, Input, Node, Node2D}, global::godot_print, obj::{Base, Gd, WithBaseField}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::{Array, GString}, classes::{ INode, Input, Node, Node2D, PackedScene, ResourceLoader}, global::godot_print, obj::{Base, Gd, WithBaseField}, prelude::{godot_api, GodotClass}};
 
 use crate::player::pong::Pong;
 use crate::player::player::Player;
@@ -17,6 +17,8 @@ pub struct GameState {
     pong_start: Option<Gd<Node2D>>,
     #[export]
     gamespeed: f64,
+    #[export]
+    levels: Array<GString>,
     base: Base<Node>,
 }
 
@@ -30,13 +32,14 @@ impl INode for GameState {
             player_start: None,
             pong_start: None,
             gamespeed: 1.0,
+            levels: Default::default(),
             base,
         }
     }
 
     fn ready(&mut self) {
         let this = self.to_gd();
-        let player = match &mut self.player {
+            let player = match &mut self.player {
             None => panic!("Heyoheyo"),
             Some(p) => p,
         };
@@ -46,6 +49,8 @@ impl INode for GameState {
             .connect_obj(&this, |s: &mut Self| {
                 s.reset_game();
             });
+
+        self.change_level("res://Levels/test_level.tscn".to_string());
     }
 
     fn physics_process(&mut self, _delta: f64) {
@@ -53,6 +58,10 @@ impl INode for GameState {
             self.set_gamestate_speed(0.5);
         } else if self.input.is_action_just_released("shoot") {
             self.set_gamestate_speed(1.0);
+        }
+
+        if self.input.is_action_just_pressed("change_level") {
+            self.change_level("res://Levels/level_1.tscn".to_string());
         }
     }
 }
@@ -81,6 +90,21 @@ impl GameState {
             pong.bind_mut().reset();
             godot_print!("heyo")
         }
+    }
+
+    fn change_level(&mut self, level_path: String) {
+        if self.base().get_child_count() > 0 {
+            let level = self.base_mut().get_child(0).unwrap();
+            level.cast::<Node2D>().queue_free();
+        }
+
+        let mut res_loader = ResourceLoader::singleton();
+
+        let level_one = res_loader.load(&level_path)
+            .unwrap().cast::<PackedScene>().instantiate_as::<Node2D>();
+        self.base_mut().add_child(&level_one);
+        self.reset_game();
+
     }
 }
 

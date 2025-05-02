@@ -1,6 +1,6 @@
 use core::panic;
 
-use godot::{builtin::Vector2, classes::{ AnimatedSprite2D, Area2D, CharacterBody2D, ICharacterBody2D, Input, Node2D }, global::{godot_print, move_toward}, obj::{Base, Gd, WithBaseField, WithUserSignals}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::Vector2, classes::{ AnimatedSprite2D, Area2D, CharacterBody2D, ICharacterBody2D, Input, Line2D, Node2D }, global::{godot_print, move_toward}, obj::{Base, Gd, WithBaseField, WithUserSignals}, prelude::{godot_api, GodotClass}};
 
 use crate::player::pong::Pong;
 
@@ -8,6 +8,8 @@ use crate::player::pong::Pong;
 #[class(base=CharacterBody2D)]
 pub struct Player {
     alive: bool,
+    aiming: bool,
+    in_range: bool,
     speed: f64,
     game_speed: f32,
     #[export]
@@ -24,6 +26,10 @@ pub struct Player {
     sprite: Option<Gd<AnimatedSprite2D>>,
     #[export]
     start_point: Option<Gd<Node2D>>,
+    #[export]
+    aim_ind: Option<Gd<Line2D>>,
+    #[export]
+    aim_ind_in_range: Option<Gd<Line2D>>,
     base: Base<CharacterBody2D>,
 }
 
@@ -35,6 +41,8 @@ impl ICharacterBody2D for Player {
 
         Self {
             alive: true,
+            aiming: false,
+            in_range: false,
             speed: 300.0,
             game_speed: 1.0,
             jump_velocity: -200.0,
@@ -45,6 +53,8 @@ impl ICharacterBody2D for Player {
             hurtbox: None,
             sprite: None,
             start_point: None,
+            aim_ind: None,
+            aim_ind_in_range: None,
             base,
         }
     }
@@ -68,8 +78,15 @@ impl ICharacterBody2D for Player {
             Some(hb) => hb
         };
 
-        hb.signals().body_entered().connect(move |body| Self::on_body_entered(body));
-        hb.signals().body_exited().connect(move |body| Self::on_body_exited(body));
+        hb.signals().body_entered()
+            .connect_obj(&this, |s: &mut Self, body| {
+                s.on_body_entered(body);
+            });
+        hb.signals().body_exited()
+            .connect_obj(&this, |s: &mut Self, body| {
+                s.on_body_exited(body);
+            });
+
 
         hurt.signals()
             .body_entered()
@@ -106,6 +123,41 @@ impl ICharacterBody2D for Player {
         let direction = input.get_axis("move_left", "move_right");
         let hit_vert = input.get_axis("hit_up", "hit_down");
         let hit_horiz = input.get_axis("hit_left", "hit_right");
+
+        if self.aiming {
+
+            let aim = match &mut self.aim_ind {
+                None => {
+                    godot_print!("No aim ind");
+                    panic!("ahhh");
+                },
+                Some(aim) => aim
+            };
+
+            let aim_in_range = match &mut self.aim_ind_in_range {
+                None => {
+                    godot_print!("No aim ind (in range)");
+                    panic!("ahhh no in range ind");
+                },
+                Some(aim) => aim
+            };
+
+            let mut player_pos: Vector2 = Default::default();
+            {
+                player_pos.x = aim.get_position().x;
+                player_pos.y = aim.get_position().y;
+            }
+
+            aim.set_point_position(1, Vector2::new(
+                    player_pos.x + hit_horiz * 50.0,
+                    player_pos.y + hit_vert * 50.0)
+                );
+
+            aim_in_range.set_point_position(1, Vector2::new(
+                    player_pos.x + hit_horiz * 50.0,
+                    player_pos.y + hit_vert * 50.0)
+                );
+        }
 
         if direction != 0.0 {
             let vel_x = direction * self.speed as f32 * self.game_speed as f32;
@@ -169,7 +221,72 @@ impl ICharacterBody2D for Player {
 
         self.base_mut().move_and_slide();
 
-        if input.is_action_just_released("shoot") {
+        if input.is_action_pressed("shoot") {
+            self.aiming = true;
+            if self.in_range {
+                match &mut self.aim_ind {
+                    None => {
+                        godot_print!("Define aim indicator for player");
+                        panic!("No player aim ind");
+                    },
+                    Some(aim) => {
+                        aim.set_visible(false);
+                    }
+                };
+
+                match &mut self.aim_ind_in_range {
+                    None => {
+                        godot_print!("Define aim indicator for player");
+                        panic!("No player aim ind");
+                    },
+                    Some(aim) => {
+                        aim.set_visible(true);
+                    }
+
+                };
+            } else {
+
+                match &mut self.aim_ind {
+                None => {
+                    godot_print!("Define aim indicator for player");
+                    panic!("No player aim ind");
+                },
+                Some(aim) => {
+                    aim.set_visible(true);
+                }
+                };
+
+                match &mut self.aim_ind_in_range {
+                None => {
+                    godot_print!("Define aim indicator for player");
+                    panic!("No player aim ind");
+                },
+                Some(aim) => {
+                    aim.set_visible(false);
+                }
+            };
+
+            }
+        }
+        else if input.is_action_just_released("shoot") {
+            self.aiming = false;
+            match &mut self.aim_ind {
+                None => {
+                    godot_print!("Define aim indicator for player");
+                    panic!("No player aim ind");
+                },
+                Some(aim) => aim.set_visible(false)
+            };
+
+            match &mut self.aim_ind_in_range {
+                None => {
+                    godot_print!("Define aim indicator for player");
+                    panic!("No player aim ind");
+                },
+                Some(aim) => aim.set_visible(false)
+            };
+
+
             let mouse_position = match &self.base_mut().get_viewport() {
                 None => panic!("no viewport"),
                 Some(viewport) => viewport.get_mouse_position(),
@@ -242,9 +359,15 @@ impl Player {
 
 impl Player {
 
-    fn on_body_entered(body: Gd<Node2D>) {
+    fn on_body_entered(&mut self, body: Gd<Node2D>) {
         if body.get_class() == "Pong".into() {
-            godot_print!("ball hit {}", body.get_class());
+            self.in_range = true;
+        }
+    }
+
+    fn on_body_exited(&mut self, body: Gd<Node2D>) {
+        if body.get_class() == "Pong".into() {
+            self.in_range = false;
         }
     }
 
@@ -252,10 +375,6 @@ impl Player {
         godot_print!("Hazard entered!, we need to emit a signal here");
         self.alive = false;
         self.signals().hit_hazard().emit();
-    }
-
-    fn on_body_exited(body: Gd<Node2D>) {
-        godot_print!("ball left {}", body);
     }
 
     fn can_jump(&mut self) -> bool {

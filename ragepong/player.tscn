@@ -1,11 +1,16 @@
-[gd_scene load_steps=40 format=3 uid="uid://cm7458rx6popx"]
+[gd_scene load_steps=42 format=3 uid="uid://cm7458rx6popx"]
 
-[ext_resource type="Texture2D" uid="uid://unvvljsn2iwp" path="res://icon.svg" id="1_4flbx"]
+[ext_resource type="Gradient" uid="uid://cpdpb1e0rfvjc" path="res://Assets/out_of_range_gradient.tres" id="1_2hs0m"]
+[ext_resource type="Gradient" uid="uid://iygm8www48n5" path="res://Assets/in_range_gradient.tres" id="2_1jxqw"]
 [ext_resource type="Texture2D" uid="uid://d4kc6kmq0luco" path="res://Assets/Combat Ready Idle.png" id="2_onrkg"]
 [ext_resource type="Texture2D" uid="uid://q8utvygfttwx" path="res://Assets/Fall.png" id="2_sweqy"]
 [ext_resource type="Texture2D" uid="uid://dukw7utx8yl33" path="res://Assets/Jump.png" id="3_hqtel"]
 [ext_resource type="Texture2D" uid="uid://dd6681qq0by83" path="res://Assets/Run.png" id="3_i3pqv"]
 [ext_resource type="Texture2D" uid="uid://cfxx8vhx2rhr" path="res://Assets/Attack 1.png" id="6_2hs0m"]
+
+[sub_resource type="Curve" id="Curve_sweqy"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.13296), 0.0, 0.0, 0, 0]
+point_count = 2
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_uhqqe"]
 size = Vector2(18, 21)
@@ -247,17 +252,29 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_2hs0m"]
 size = Vector2(11, 21)
 
-[node name="Player" type="Player" node_paths=PackedStringArray("hittingbox", "hurtbox", "sprite")]
+[node name="Player" type="Player" node_paths=PackedStringArray("hittingbox", "hurtbox", "sprite", "aim_ind", "aim_ind_in_range")]
 jump_velocity = -100.0
 hittingbox = NodePath("HitBox")
 hurtbox = NodePath("HurtBox")
 sprite = NodePath("AnimatedSprite")
-metadata/_edit_group_ = true
+aim_ind = NodePath("AimInd")
+aim_ind_in_range = NodePath("AimIndInRange")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="AimInd" type="Line2D" parent="."]
 visible = false
-scale = Vector2(0.25, 0.25)
-texture = ExtResource("1_4flbx")
+points = PackedVector2Array(0, 0, 10, 0)
+width = 20.0
+width_curve = SubResource("Curve_sweqy")
+gradient = ExtResource("1_2hs0m")
+end_cap_mode = 2
+
+[node name="AimIndInRange" type="Line2D" parent="."]
+visible = false
+points = PackedVector2Array(0, 0, 10, 0)
+width = 20.0
+width_curve = SubResource("Curve_sweqy")
+gradient = ExtResource("2_1jxqw")
+end_cap_mode = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(-1, 1.5)

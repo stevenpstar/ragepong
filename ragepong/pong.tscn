@@ -1,8 +1,9 @@
 [gd_scene load_steps=3 format=3 uid="uid://bd4bjlwqecxbq"]
 
-[ext_resource type="Texture2D" uid="uid://unvvljsn2iwp" path="res://icon.svg" id="1_8w31r"]
+[ext_resource type="Texture2D" uid="uid://b3ph4wclhf078" path="res://Assets/ball_high_res.png" id="1_8w31r"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_y4u2a"]
+radius = 5.0
 
 [node name="Pong" type="Pong"]
 speed = 100.0
@@ -11,6 +12,7 @@ speed = 100.0
 shape = SubResource("CircleShape2D_y4u2a")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
 position = Vector2(1.19209e-07, -2.38419e-07)
-scale = Vector2(0.113281, 0.121094)
+scale = Vector2(0.063, 0.063)
 texture = ExtResource("1_8w31r")
