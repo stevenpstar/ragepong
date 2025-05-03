@@ -1,4 +1,4 @@
-use godot::{builtin::Vector2, classes::{CharacterBody2D, ICharacterBody2D, Node2D}, obj::{Base, Gd, WithBaseField}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::Vector2, classes::{CharacterBody2D, ICharacterBody2D, Node2D}, global::godot_print, obj::{Base, Gd, WithBaseField}, prelude::{godot_api, GodotClass}};
 
 #[derive(GodotClass)]
 #[class(base=CharacterBody2D)]
@@ -45,7 +45,10 @@ impl ICharacterBody2D for Pong {
             let collision = self.base_mut().get_last_slide_collision();
             let collided: bool = match collision {
                 None => false,
-                Some(_) => true,
+                Some(c) => {
+                    godot_print!("Collided with {}", c.get_collider_id());
+                    true
+                },
             };
             if collided {
                 self.reverse_direction();

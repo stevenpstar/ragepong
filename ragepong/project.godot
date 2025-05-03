@@ -75,4 +75,4 @@ change_level={
 [rendering]
 
 renderer/rendering_method="mobile"
-environment/defaults/default_clear_color=Color(0.0195212, 0.0592999, 0.104633, 1)
+environment/defaults/default_clear_color=Color(0.0357628, 0.0421762, 0.06464, 1)

@@ -1,7 +1,8 @@
-use godot::{builtin::{Array, GString}, classes::{ INode, Input, Node, Node2D, PackedScene, ResourceLoader}, global::godot_print, obj::{Base, Gd, WithBaseField}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::{Array, GString}, classes::{ INode, Input, Node, Node2D, PackedScene, ResourceLoader}, global::{godot_error, godot_print}, obj::{Base, Gd, WithBaseField}, prelude::{godot_api, GodotClass}};
 
 use crate::player::pong::Pong;
 use crate::player::player::Player;
+use crate::core::level::Level;
 
 #[derive(GodotClass)]
 #[class(base=Node)]
@@ -68,6 +69,9 @@ impl INode for GameState {
 
 #[godot_api]
 impl GameState {
+    #[signal]
+    fn sigsig();
+
     #[func]
     pub fn set_gamestate_speed(&mut self, speed: f64) {
         self.gamespeed = speed;
@@ -93,6 +97,9 @@ impl GameState {
     }
 
     fn change_level(&mut self, level_path: String) {
+        godot_print!("Trying to change level!");
+        let this = self.to_gd();
+
         if self.base().get_child_count() > 0 {
             let level = self.base_mut().get_child(0).unwrap();
             level.cast::<Node2D>().queue_free();
@@ -100,11 +107,52 @@ impl GameState {
 
         let mut res_loader = ResourceLoader::singleton();
 
-        let level_one = res_loader.load(&level_path)
-            .unwrap().cast::<PackedScene>().instantiate_as::<Node2D>();
-        self.base_mut().add_child(&level_one);
-        self.reset_game();
+        let mut next_level: Gd<Level> = res_loader.load(&level_path)
+            .unwrap().cast::<PackedScene>().instantiate_as::<Level>();
+        self.base_mut().add_child(&next_level);
 
+        {
+            let p_start = match &mut self.player_start {
+                None => {
+                    godot_error!("No player start in gamestate");
+                    panic!("uh oh!")
+                },
+                Some(ps) => ps
+            };
+
+            p_start.set_position(next_level.bind().get_player_start_position());
+
+        }
+
+        {
+            let pong_start = match &mut self.pong_start {
+                None => {
+                    godot_error!("No pong start in gamestate");
+                    panic!("uh oh!")
+                },
+                Some(ps) => ps
+            };
+
+            pong_start.set_position(next_level.bind().get_pong_start_position());
+
+        }
+    
+        let mut level_opt = next_level.bind_mut().get_level_end();
+        let level_end = match &mut level_opt {
+            None => {
+                godot_print!("No level end on level found");
+                panic!("No level end on level found");
+            },
+            Some(end) => end
+        };
+
+        level_end.signals()
+            .level_ended()
+            .connect_obj(&this, |s: &mut Self, _path| {
+                s.change_level(_path);
+        });
+
+        self.reset_game();
     }
 }
 

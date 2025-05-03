@@ -11,7 +11,7 @@ point_count = 2
 offsets = PackedFloat32Array(0, 0.432099, 0.691358)
 colors = PackedColorArray(1, 1, 1, 0.635294, 0.772549, 0.772549, 0.772549, 0.396078, 1, 1, 1, 0)
 
-[node name="Node2D" type="Node2D"]
+[node name="Game" type="Node2D"]
 
 [node name="Player" parent="." node_paths=PackedStringArray("start_point") instance=ExtResource("2_ia1lp")]
 mkb = false

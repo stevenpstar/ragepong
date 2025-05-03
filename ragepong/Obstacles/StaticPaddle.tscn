@@ -1,0 +1,24 @@
+[gd_scene load_steps=2 format=3 uid="uid://cjohd85hul5i3"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5qmsh"]
+size = Vector2(10, 40)
+
+[node name="StaticPaddleContainer" type="Node"]
+
+[node name="StaticPaddle" type="StaticPaddle" parent="." node_paths=PackedStringArray("min_point", "max_point", "bounds")]
+min_point = NodePath("../MinPoint")
+max_point = NodePath("../MaxPoint")
+bounds = NodePath("Collider")
+
+[node name="Collider" type="CollisionShape2D" parent="StaticPaddle"]
+shape = SubResource("RectangleShape2D_5qmsh")
+
+[node name="Paddle" type="ColorRect" parent="StaticPaddle"]
+offset_left = -5.0
+offset_top = -20.0
+offset_right = 5.0
+offset_bottom = 20.0
+
+[node name="MinPoint" type="Node2D" parent="."]
+
+[node name="MaxPoint" type="Node2D" parent="."]

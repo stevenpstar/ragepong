@@ -1,8 +1,14 @@
-use godot::{classes::{INode2D, Node2D}, obj::{Base, Gd}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::{Array, Vector2}, classes::{INode2D, Node2D}, obj::{Base, Gd}, prelude::{godot_api, GodotClass}};
+
+use super::level_end::LevelEnd;
 
 #[derive(GodotClass)]
 #[class(base=Node2D)]
 pub struct Level {
+    #[export]
+    obstacles: Array<Option<Gd<Node2D>>>,
+    #[export]
+    level_end: Option<Gd<LevelEnd>>,
     #[export]
     player_start: Option<Gd<Node2D>>,
     #[export]
@@ -14,9 +20,35 @@ pub struct Level {
 impl INode2D for Level {
     fn init(base: Base<Node2D>) -> Self {
         Self {
+            obstacles: Default::default(),
+            level_end: None,
             player_start: None,
             pong_start: None,
             base,
         }
     }
+}
+
+#[godot_api]
+impl Level {
+    #[func]
+    pub fn get_player_start_position(&self) -> Vector2 {
+        let player_start = match &self.player_start {
+            None => Vector2::new(0.0, 0.0),
+            Some(start) => start.get_position()
+        };
+
+        return player_start;
+    }
+
+    #[func]
+    pub fn get_pong_start_position(&self) -> Vector2 {
+        let pong_start = match &self.pong_start {
+            None => Vector2::new(0.0, 0.0),
+            Some(start) => start.get_position()
+        };
+
+        return pong_start;
+    }
+
 }
