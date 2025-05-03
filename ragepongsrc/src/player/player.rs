@@ -87,7 +87,6 @@ impl ICharacterBody2D for Player {
                 s.on_body_exited(body);
             });
 
-
         hurt.signals()
             .body_entered()
             .connect_obj(&this, |s: &mut Self, body| {
