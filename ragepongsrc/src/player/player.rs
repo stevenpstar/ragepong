@@ -2,7 +2,7 @@ use core::panic;
 
 use godot::{builtin::Vector2, classes::{ AnimatedSprite2D, Area2D, CharacterBody2D, ICharacterBody2D, Input, Line2D, Node2D }, global::{godot_print, move_toward}, obj::{Base, Gd, WithBaseField, WithUserSignals}, prelude::{godot_api, GodotClass}};
 
-use crate::player::pong::Pong;
+use crate::{obstacles::{laser_gate::LaserGate, switch::Switch}, player::pong::Pong};
 
 #[derive(GodotClass)]
 #[class(base=CharacterBody2D)]
@@ -91,6 +91,12 @@ impl ICharacterBody2D for Player {
             .body_entered()
             .connect_obj(&this, |s: &mut Self, body| {
                 s.on_hazard_entered(body);
+            });
+
+        hurt.signals()
+            .area_entered()
+            .connect_obj(&this, |s: &mut Self, area| {
+                s.on_hazard_area_entered(area);
             });
 
         // set player spawn
@@ -313,10 +319,9 @@ impl ICharacterBody2D for Player {
             for ball in balls.iter_shared() {
                 if ball.get_class() == "Pong".into() {
                     let mut b = ball.cast::<Pong>();
-                    //b.bind_mut().reverse_direction();
                     b.bind_mut().unlock();
                     b.bind_mut().hit_direction(hit_direction);
-                }
+                } 
             }
 
             let hurt_box = match &self.hurtbox {
@@ -327,6 +332,23 @@ impl ICharacterBody2D for Player {
             let hazards = hurt_box.get_overlapping_bodies();
             for _hazard in hazards.iter_shared() {
                 godot_print!("Hitting here {}", self.base().get_position());
+            }
+        }
+
+        if input.is_action_just_pressed("interact") {
+
+            let h_box = match &self.hittingbox {
+                None => panic!("We should have a hitting box"),
+                Some(hb) => hb,
+            };
+
+            let interactives = h_box.get_overlapping_areas();
+            for int in interactives.iter_shared() {
+                if int.get_class() == "Switch".into() {
+                    godot_print!("Switch hit");
+                    let mut s = int.cast::<Switch>();
+                    s.bind_mut().toggle();
+                }
             }
         }
     }
@@ -374,6 +396,19 @@ impl Player {
     fn on_hazard_entered(&mut self, _body: Gd<Node2D>) {
         self.alive = false;
         self.signals().hit_hazard().emit();
+    }
+
+    fn on_hazard_area_entered(&mut self, area: Gd<Area2D>) {
+        if area.get_class() == "LaserGate".into() {
+            let gate = area.cast::<LaserGate>();
+            if gate.bind().get_open() == false {
+                self.alive = false;
+                self.signals().hit_hazard().emit();
+            }
+        } else {
+            self.alive = false;
+            self.signals().hit_hazard().emit();
+        }
     }
 
     fn can_jump(&mut self) -> bool {
