@@ -21,7 +21,6 @@ metadata/_edit_group_ = true
 
 [node name="Pong" parent="." node_paths=PackedStringArray("start_point") instance=ExtResource("3_sasra")]
 start_point = NodePath("../PongStart")
-start_dir = Vector2(1, 0)
 position = Vector2(-37, 217)
 metadata/_edit_group_ = true
 
@@ -32,7 +31,7 @@ player_start = NodePath("../PlayerStart")
 pong_start = NodePath("../PongStart")
 levels = Array[String](["test_level", "level_1"])
 base_path = "res://Levels/"
-level_str = "test_level.tscn"
+level_str = "level_2.tscn"
 
 [node name="BallTrail" type="BallTrail" parent="." node_paths=PackedStringArray("pong")]
 pong = NodePath("../Pong")
@@ -49,5 +48,6 @@ position = Vector2(-31, 257)
 [node name="PongStart" type="Node2D" parent="."]
 position = Vector2(-31, 243)
 
-[node name="Camera" type="Camera2D" parent="."]
+[node name="Camera" type="GameCamera" parent="."]
 anchor_mode = 0
+position_smoothing_enabled = true

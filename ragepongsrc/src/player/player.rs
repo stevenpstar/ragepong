@@ -11,6 +11,8 @@ pub struct Player {
     aiming: bool,
     in_range: bool,
     has_jumped: bool,
+    aim_x: f32,
+    aim_y: f32,
     #[export]
     speed: f64,
     #[export]
@@ -49,6 +51,8 @@ impl ICharacterBody2D for Player {
             aiming: false,
             in_range: false,
             has_jumped: false,
+            aim_x: 0.0,
+            aim_y: 0.0,
             speed: 50.0,
             max_speed: 300.0,
             game_speed: 1.0,
@@ -321,7 +325,6 @@ impl ICharacterBody2D for Player {
                 },
                 Some(aim) => aim.set_visible(false)
             };
-
 
             let mouse_position = match &self.base_mut().get_viewport() {
                 None => panic!("no viewport"),

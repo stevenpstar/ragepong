@@ -165,6 +165,12 @@ impl GameState {
             Some(end) => end
         };
 
+        {
+            for mut pong in &mut self.balls.iter_shared() {
+                pong.bind_mut().set_start_dir(next_level.bind().get_pong_direction());
+            }
+        }
+
 
         level_end.signals()
             .level_ended()

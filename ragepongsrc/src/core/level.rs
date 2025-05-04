@@ -15,6 +15,8 @@ pub struct Level {
     player_start: Option<Gd<Node2D>>,
     #[export]
     pong_start: Option<Gd<Node2D>>,
+    #[export]
+    pong_direction: Vector2,
     base: Base<Node2D>,
 }
 
@@ -26,6 +28,7 @@ impl INode2D for Level {
             level_end: None,
             player_start: None,
             pong_start: None,
+            pong_direction: Vector2::new(0.0, 0.0),
             base,
         }
     }
