@@ -314,6 +314,7 @@ impl ICharacterBody2D for Player {
                 if ball.get_class() == "Pong".into() {
                     let mut b = ball.cast::<Pong>();
                     //b.bind_mut().reverse_direction();
+                    b.bind_mut().unlock();
                     b.bind_mut().hit_direction(hit_direction);
                 }
             }
@@ -371,7 +372,6 @@ impl Player {
     }
 
     fn on_hazard_entered(&mut self, _body: Gd<Node2D>) {
-        godot_print!("Hazard entered!, we need to emit a signal here");
         self.alive = false;
         self.signals().hit_hazard().emit();
     }

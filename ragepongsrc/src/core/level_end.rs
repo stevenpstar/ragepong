@@ -51,7 +51,7 @@ impl LevelEnd {
     }
 
     fn on_body_entered(&mut self, body: Gd<Node2D>) {
-        if body.get_class() == "Pong".into() {
+        if body.get_class() == "Player".into() {
             let level_path: GString;
             {
                 level_path = self.get_level_path();

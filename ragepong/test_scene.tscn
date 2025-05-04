@@ -16,13 +16,15 @@ colors = PackedColorArray(1, 1, 1, 0.635294, 0.772549, 0.772549, 0.772549, 0.396
 [node name="Player" parent="." node_paths=PackedStringArray("start_point") instance=ExtResource("2_ia1lp")]
 mkb = false
 start_point = NodePath("../PlayerStart")
-position = Vector2(211, 521)
+position = Vector2(-68, 336)
+metadata/_edit_group_ = true
 
 [node name="Pong" parent="." node_paths=PackedStringArray("start_point") instance=ExtResource("3_sasra")]
 speed = 400.0
 start_point = NodePath("../PongStart")
 start_dir = Vector2(1, 0)
-position = Vector2(170, 256)
+position = Vector2(-37, 217)
+metadata/_edit_group_ = true
 
 [node name="GameState" type="GameState" parent="." node_paths=PackedStringArray("player", "balls", "player_start", "pong_start")]
 player = NodePath("../Player")
@@ -41,7 +43,7 @@ begin_cap_mode = 2
 end_cap_mode = 2
 
 [node name="PlayerStart" type="Node2D" parent="."]
-position = Vector2(849, 403)
+position = Vector2(-31, 257)
 
 [node name="PongStart" type="Node2D" parent="."]
-position = Vector2(204, 326)
+position = Vector2(-31, 243)

@@ -1,0 +1,17 @@
+[gd_scene load_steps=2 format=3 uid="uid://di0c531pkwxch"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_cxbkn"]
+
+[node name="PongLock" type="PongLock"]
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_cxbkn")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+z_index = -1
+offset_left = -7.0
+offset_top = -7.0
+offset_right = 7.0
+offset_bottom = 7.0
+color = Color(0.892074, 0.516019, 0.764165, 1)
