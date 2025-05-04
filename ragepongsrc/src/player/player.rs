@@ -10,10 +10,15 @@ pub struct Player {
     alive: bool,
     aiming: bool,
     in_range: bool,
+    has_jumped: bool,
+    #[export]
     speed: f64,
+    #[export]
+    max_speed: f64,
     game_speed: f32,
     #[export]
     jump_velocity: f64,
+    #[export]
     jump_count: f32,
     jump_counter: f32,
     #[export]
@@ -43,7 +48,9 @@ impl ICharacterBody2D for Player {
             alive: true,
             aiming: false,
             in_range: false,
-            speed: 300.0,
+            has_jumped: false,
+            speed: 50.0,
+            max_speed: 300.0,
             game_speed: 1.0,
             jump_velocity: -200.0,
             jump_count: 4.0,
@@ -113,17 +120,26 @@ impl ICharacterBody2D for Player {
 
         let on_floor: bool = self.base().is_on_floor();
 
-        self.jump(&input);
-
         if !self.base().is_on_floor() {
             let mut new_velocity = self.base().get_velocity();
-            new_velocity.x += self.base().get_gravity().x * delta as f32;
-            new_velocity.y += self.base().get_gravity().y * delta as f32;
+            let mut gravity_slow = 0.0;
+
+            if self.has_jumped && self.base().get_velocity().y > 0.0 {
+                gravity_slow = 500.0;
+                if input.is_action_pressed("move_down") {
+                    gravity_slow = -gravity_slow;
+                }
+            }
+            new_velocity.x += (self.base().get_gravity().x - gravity_slow) * delta as f32;
+            new_velocity.y += (self.base().get_gravity().y - gravity_slow) * delta as f32;
             self.base_mut().set_velocity(new_velocity);
         } else {
             // Reset jump counter whenever we hit the floor
             self.jump_counter = 0.0;
+            self.has_jumped = false;
         }
+
+        self.jump(&input);
 
         let direction = input.get_axis("move_left", "move_right");
         let hit_vert = input.get_axis("hit_up", "hit_down");
@@ -165,8 +181,23 @@ impl ICharacterBody2D for Player {
         }
 
         if direction != 0.0 {
-            let vel_x = direction * self.speed as f32 * self.game_speed as f32;
+            let max_speed = self.max_speed as f32 * direction;
+            let mut vel_x = self.base().get_velocity().x;
+
+            // reset to zero if changing direction
+            if direction < 0.0 && self.base().get_velocity().x > 0.2 {
+                vel_x = 0.0;
+            } else if direction > 0.0 && self.base().get_velocity().x < -0.2 {
+                vel_x = 0.0;
+            }
+            
+            vel_x += direction * self.speed as f32 * self.game_speed as f32;
             let vel_y = self.base().get_velocity().y as f32;
+            if max_speed > 0.0 && vel_x > max_speed{
+                vel_x = max_speed as f32;
+            } else if max_speed < 0.0 && vel_x < max_speed as f32 {
+                vel_x = max_speed as f32;
+            }
             self.base_mut().set_velocity(Vector2::new(vel_x, vel_y));
             // play run animation
             let char_sprite: &mut Gd<AnimatedSprite2D> = match &mut self.sprite {
@@ -401,7 +432,7 @@ impl Player {
     fn on_hazard_area_entered(&mut self, area: Gd<Area2D>) {
         if area.get_class() == "LaserGate".into() {
             let gate = area.cast::<LaserGate>();
-            if gate.bind().get_open() == false {
+            if gate.bind().get_is_open() == false {
                 self.alive = false;
                 self.signals().hit_hazard().emit();
             }
@@ -432,8 +463,9 @@ impl Player {
        if input.is_action_just_pressed("jump") && self.base().is_on_floor() {
            // zero out velocity for new jump
            let mut new_vel = self.base().get_velocity();
-           new_vel.y = 0.0;
+           new_vel.y = self.jump_velocity as f32 * 2.0 as f32;
            self.base_mut().set_velocity(new_vel);
+           self.has_jumped = true;
        }
        if input.is_action_pressed("jump") && self.can_jump() {
            let mut new_vel = self.base().get_velocity();

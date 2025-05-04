@@ -36,7 +36,6 @@ impl INode2D for LevelEnd {
             .connect_obj(&this, |s: &mut Self, body| {
                 s.on_body_entered(body);
             });
-            
     }
 }
 

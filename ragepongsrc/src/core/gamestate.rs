@@ -20,6 +20,11 @@ pub struct GameState {
     gamespeed: f64,
     #[export]
     levels: Array<GString>,
+    #[export]
+    base_path: GString,
+    #[export]
+    level_str: GString,
+    current_level: Option<Gd<Level>>,
     base: Base<Node>,
 }
 
@@ -34,6 +39,9 @@ impl INode for GameState {
             pong_start: None,
             gamespeed: 1.0,
             levels: Default::default(),
+            base_path: Default::default(),
+            level_str: Default::default(),
+            current_level: None,
             base,
         }
     }
@@ -50,8 +58,10 @@ impl INode for GameState {
             .connect_obj(&this, |s: &mut Self| {
                 s.reset_game();
             });
-
-        self.change_level("res://Levels/test_level.tscn".to_string());
+        let base_path = self.base_path.clone();
+        let level_str = self.level_str.clone();
+        let level_path: GString = format!("{base_path}{level_str}").into();
+        self.change_level(level_path.to_string());
     }
 
     fn physics_process(&mut self, _delta: f64) {
@@ -86,6 +96,15 @@ impl GameState {
     }
 
     pub fn reset_game(&mut self) {
+        let level = match &self.current_level {
+            None => {
+                godot_print!("No current level in gamestate");
+                panic!("no current level in gamestate");
+            },
+            Some(lvl) => lvl
+        };
+        level.bind().reset_obstacles();
+
         match &mut self.player {
             None => panic!("Player not found"),
             Some(player) => player.bind_mut().reset_player()
@@ -146,12 +165,13 @@ impl GameState {
             Some(end) => end
         };
 
+
         level_end.signals()
             .level_ended()
             .connect_obj(&this, |s: &mut Self, _path| {
                 s.change_level(_path);
         });
-
+        self.current_level = Some(next_level);
         self.reset_game();
     }
 }

@@ -1,7 +1,7 @@
 [gd_scene load_steps=2 format=3 uid="uid://cd1id26awmbqy"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_eqfj0"]
-size = Vector2(176, 16)
+size = Vector2(184, 16)
 
 [node name="LaserGate" type="LaserGate"]
 collision_layer = 2

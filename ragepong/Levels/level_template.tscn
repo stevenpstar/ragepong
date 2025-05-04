@@ -1,0 +1,28 @@
+[gd_scene load_steps=3 format=3 uid="uid://cpsjg3xsij0a2"]
+
+[ext_resource type="PackedScene" uid="uid://ddixlv1rbvpr4" path="res://Levels/TestTileMap.tscn" id="1_gbce7"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_owxfo"]
+
+[node name="LevelTemplate" type="Level" node_paths=PackedStringArray("level_end", "player_start", "pong_start")]
+level_end = NodePath("LevelEnd")
+player_start = NodePath("PlayerStart")
+pong_start = NodePath("PongStart")
+
+[node name="LevelEnd" type="LevelEnd" parent="." node_paths=PackedStringArray("area")]
+area = NodePath("Area2D")
+position = Vector2(16, -24)
+metadata/_edit_group_ = true
+
+[node name="Area2D" type="Area2D" parent="LevelEnd"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LevelEnd/Area2D"]
+shape = SubResource("RectangleShape2D_owxfo")
+
+[node name="PlayerStart" type="Node2D" parent="."]
+position = Vector2(56, -16)
+
+[node name="PongStart" type="Node2D" parent="."]
+position = Vector2(40, -16)
+
+[node name="TileMapLayer" parent="." instance=ExtResource("1_gbce7")]

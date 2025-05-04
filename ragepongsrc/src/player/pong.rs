@@ -117,6 +117,7 @@ impl Pong {
         self.base_mut().set_position(position);
         self.vel_x = self.start_dir.x;
         self.vel_y = self.start_dir.y;
+        self.locked = false;
     }
 
     #[func]

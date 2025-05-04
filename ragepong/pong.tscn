@@ -9,7 +9,7 @@ radius = 4.0
 radius = 4.0
 
 [node name="Pong" type="Pong" node_paths=PackedStringArray("hurtbox")]
-speed = 100.0
+speed = 300.0
 hurtbox = NodePath("HurtBox")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

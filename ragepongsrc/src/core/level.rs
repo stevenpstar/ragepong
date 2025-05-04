@@ -1,12 +1,14 @@
 use godot::{builtin::{Array, Vector2}, classes::{INode2D, Node2D}, obj::{Base, Gd}, prelude::{godot_api, GodotClass}};
 
+use crate::obstacles::laser_gate::LaserGate;
+
 use super::level_end::LevelEnd;
 
 #[derive(GodotClass)]
 #[class(base=Node2D)]
 pub struct Level {
     #[export]
-    obstacles: Array<Option<Gd<Node2D>>>,
+    obstacles: Array<Gd<Node2D>>,
     #[export]
     level_end: Option<Gd<LevelEnd>>,
     #[export]
@@ -49,6 +51,16 @@ impl Level {
         };
 
         return pong_start;
+    }
+
+    #[func]
+    pub fn reset_obstacles(&self) {
+        for o in self.obstacles.iter_shared() {
+            if o.get_class() == "LaserGate".into() {
+                let mut gate = o.cast::<LaserGate>();
+                gate.bind_mut().reset();
+            }
+        }
     }
 
 }
