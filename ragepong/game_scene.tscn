@@ -31,7 +31,7 @@ player_start = NodePath("../PlayerStart")
 pong_start = NodePath("../PongStart")
 levels = Array[String](["test_level", "level_1"])
 base_path = "res://Levels/"
-level_str = "level_2.tscn"
+level_str = "test_level.tscn"
 
 [node name="BallTrail" type="BallTrail" parent="." node_paths=PackedStringArray("pong")]
 pong = NodePath("../Pong")

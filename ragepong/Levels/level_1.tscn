@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=4 uid="uid://c1i4ptxgys1bo"]
+[gd_scene load_steps=9 format=4 uid="uid://c1i4ptxgys1bo"]
 
 [ext_resource type="PackedScene" uid="uid://cjohd85hul5i3" path="res://Obstacles/StaticPaddle.tscn" id="1_dilhk"]
 [ext_resource type="PackedScene" uid="uid://ddixlv1rbvpr4" path="res://Levels/TestTileMap.tscn" id="1_n0qsc"]
@@ -11,6 +11,13 @@ size = Vector2(10, 41)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_n0qsc"]
 size = Vector2(20, 128)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_syshm"]
+resource_local_to_scene = true
+size = Vector2(152, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_rf6l5"]
+size = Vector2(167, 159)
 
 [node name="Level1" type="Level" node_paths=PackedStringArray("obstacles", "level_end", "player_start", "pong_start")]
 obstacles = [NodePath("LaserGate"), NodePath("PongLock"), NodePath("StaticPaddleContainer/StaticPaddle")]
@@ -40,7 +47,7 @@ position = Vector2(151, 583)
 position = Vector2(351, 583)
 
 [node name="LevelEnd" type="LevelEnd" parent="." node_paths=PackedStringArray("area")]
-next_level = "level_3.tscn"
+next_level = "level_2.tscn"
 area = NodePath("Area2D")
 position = Vector2(1136, 558)
 
@@ -58,4 +65,18 @@ position = Vector2(128, 391)
 position = Vector2(569, 544)
 rotation = 1.5708
 
+[node name="CollisionShape2D" parent="LaserGate" index="0"]
+position = Vector2(-4, 0)
+shape = SubResource("RectangleShape2D_syshm")
+
+[node name="CameraArea" type="CameraArea" parent="." node_paths=PackedStringArray("camera_pos")]
+camera_pos = NodePath("CamPos")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CameraArea"]
+position = Vector2(184, 546)
+shape = SubResource("RectangleShape2D_rf6l5")
+
+[node name="CamPos" type="Node2D" parent="CameraArea"]
+
 [editable path="StaticPaddleContainer"]
+[editable path="LaserGate"]

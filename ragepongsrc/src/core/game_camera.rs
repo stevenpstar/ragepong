@@ -3,7 +3,6 @@ use godot::{builtin::Vector2, classes::{Camera2D, ICamera2D}, obj::{Base, WithBa
 #[derive(GodotClass)]
 #[class(base=Camera2D)]
 pub struct GameCamera {
-    initial_pos: Vector2,
     target_pos: Vector2,
     base: Base<Camera2D>,
 }
@@ -12,7 +11,6 @@ pub struct GameCamera {
 impl ICamera2D for GameCamera {
     fn init(base: Base<Camera2D>) -> Self {
         Self {
-            initial_pos: Vector2::new(0.0, 0.0),
             target_pos: Vector2::new(0.0, 0.0),
             base,
         }

@@ -253,10 +253,13 @@ animations = [{
 size = Vector2(11, 21)
 
 [node name="Player" type="Player" node_paths=PackedStringArray("hittingbox", "hurtbox", "sprite", "aim_ind", "aim_ind_in_range")]
+can_double_jump = true
 speed = 25.0
 max_speed = 250.0
 jump_velocity = -50.0
-jump_count = 6.0
+jump_time = 6.0
+dash_velocity = 500.0
+dash_time = 12.0
 hittingbox = NodePath("HitBox")
 hurtbox = NodePath("HurtBox")
 sprite = NodePath("AnimatedSprite")

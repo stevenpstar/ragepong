@@ -65,9 +65,9 @@ impl INode for GameState {
     }
 
     fn physics_process(&mut self, _delta: f64) {
-        if self.input.is_action_pressed("shoot") {
+        if self.input.is_action_pressed("aim") {
             self.set_gamestate_speed(0.5);
-        } else if self.input.is_action_just_released("shoot") {
+        } else if self.input.is_action_just_released("aim") {
             self.set_gamestate_speed(1.0);
         }
 

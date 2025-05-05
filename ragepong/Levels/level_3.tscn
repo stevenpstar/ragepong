@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=4 uid="uid://c6ridcg3qnf34"]
+[gd_scene load_steps=12 format=4 uid="uid://c6ridcg3qnf34"]
 
 [ext_resource type="PackedScene" uid="uid://cpsjg3xsij0a2" path="res://Levels/level_template.tscn" id="1_5lru4"]
 [ext_resource type="PackedScene" uid="uid://cjohd85hul5i3" path="res://Obstacles/StaticPaddle.tscn" id="2_ej5lj"]
@@ -14,9 +14,25 @@ size = Vector2(19, 48)
 resource_local_to_scene = true
 size = Vector2(64, 16)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_uwxw1"]
+resource_local_to_scene = true
+size = Vector2(171.263, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ay5qi"]
+resource_local_to_scene = true
+size = Vector2(184, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fa81k"]
+resource_local_to_scene = true
+size = Vector2(80, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ck3gp"]
+size = Vector2(284.019, 210)
+
 [node name="Level3" instance=ExtResource("1_5lru4")]
 
 [node name="LevelEnd" parent="." index="0"]
+next_level = "test_level.tscn"
 position = Vector2(16, 80)
 
 [node name="CollisionShape2D" parent="LevelEnd/Area2D" index="0"]
@@ -62,6 +78,11 @@ position = Vector2(320, 80)
 rotation = 1.5708
 scale = Vector2(0.467118, 1)
 
+[node name="CollisionShape2D" parent="LaserGate" index="0"]
+position = Vector2(0, -6.10352e-05)
+scale = Vector2(1, 1)
+shape = SubResource("RectangleShape2D_uwxw1")
+
 [node name="Switch" parent="." index="6" node_paths=PackedStringArray("activatables") instance=ExtResource("4_absw3")]
 activatables = [NodePath("../LaserGate"), NodePath("../LaserGate2")]
 position = Vector2(568, 168)
@@ -71,6 +92,7 @@ position = Vector2(512, 128)
 
 [node name="CollisionShape2D" parent="LaserGate2" index="0"]
 position = Vector2(4, 0)
+shape = SubResource("RectangleShape2D_ay5qi")
 
 [node name="ColorRect" parent="LaserGate2" index="1"]
 offset_right = 96.0
@@ -81,12 +103,26 @@ rotation = 1.5708
 
 [node name="CollisionShape2D" parent="LaserGate3" index="0"]
 position = Vector2(8, -1.52588e-05)
+shape = SubResource("RectangleShape2D_fa81k")
 
 [node name="ColorRect" parent="LaserGate3" index="1"]
 offset_left = -32.0
 offset_right = 48.0
 color = Color(0.213927, 0.530372, 0.205426, 1)
 
+[node name="CameraArea" type="CameraArea" parent="." index="9" node_paths=PackedStringArray("camera_pos")]
+camera_pos = NodePath("CamPos")
+rotation = 1.5708
+scale = Vector2(0.467118, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CameraArea" index="0"]
+position = Vector2(132.01, -95.0002)
+scale = Vector2(1, 1)
+shape = SubResource("RectangleShape2D_ck3gp")
+
+[node name="CamPos" type="Node2D" parent="CameraArea" index="1"]
+
 [editable path="StaticPaddleContainer"]
+[editable path="LaserGate"]
 [editable path="LaserGate2"]
 [editable path="LaserGate3"]

@@ -1,6 +1,7 @@
 [gd_scene load_steps=2 format=3 uid="uid://cd1id26awmbqy"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_eqfj0"]
+resource_local_to_scene = true
 size = Vector2(80, 16)
 
 [node name="LaserGate" type="LaserGate"]
