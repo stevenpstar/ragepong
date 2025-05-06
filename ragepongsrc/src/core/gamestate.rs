@@ -58,6 +58,11 @@ impl INode for GameState {
             .connect_obj(&this, |s: &mut Self| {
                 s.reset_game();
             });
+        player.signals()
+            .break_slow()
+            .connect_obj(&this, |s: &mut Self| {
+                s.break_slow();
+            });
         let base_path = self.base_path.clone();
         let level_str = self.level_str.clone();
         let level_path: GString = format!("{base_path}{level_str}").into();
@@ -65,7 +70,7 @@ impl INode for GameState {
     }
 
     fn physics_process(&mut self, _delta: f64) {
-        if self.input.is_action_pressed("aim") {
+        if self.input.is_action_just_pressed("aim") {
             self.set_gamestate_speed(0.5);
         } else if self.input.is_action_just_released("aim") {
             self.set_gamestate_speed(1.0);
@@ -179,6 +184,10 @@ impl GameState {
         });
         self.current_level = Some(next_level);
         self.reset_game();
+    }
+
+    fn break_slow(&mut self) {
+        self.set_gamestate_speed(1.0);
     }
 }
 

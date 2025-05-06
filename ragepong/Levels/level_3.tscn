@@ -80,7 +80,6 @@ scale = Vector2(0.467118, 1)
 
 [node name="CollisionShape2D" parent="LaserGate" index="0"]
 position = Vector2(0, -6.10352e-05)
-scale = Vector2(1, 1)
 shape = SubResource("RectangleShape2D_uwxw1")
 
 [node name="Switch" parent="." index="6" node_paths=PackedStringArray("activatables") instance=ExtResource("4_absw3")]
@@ -117,7 +116,6 @@ scale = Vector2(0.467118, 1)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CameraArea" index="0"]
 position = Vector2(132.01, -95.0002)
-scale = Vector2(1, 1)
 shape = SubResource("RectangleShape2D_ck3gp")
 
 [node name="CamPos" type="Node2D" parent="CameraArea" index="1"]

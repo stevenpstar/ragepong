@@ -7,12 +7,16 @@ use crate::{obstacles::{laser_gate::LaserGate, switch::Switch}, player::pong::Po
 #[derive(GodotClass)]
 #[class(base=CharacterBody2D)]
 pub struct Player {
+    input: Gd<Input>,
+    face_right: bool,
     alive: bool,
     aiming: bool,
     in_range: bool,
     can_aim: bool,
     has_jumped: bool,
     has_dashed: bool,
+    slow_broken: bool,
+    dash_direction: Vector2,
     #[export]
     can_double_jump: bool,
     jump_count: i32,
@@ -57,12 +61,16 @@ impl ICharacterBody2D for Player {
         godot_print!("Player Loaded (from rust!)");
 
         Self {
+            input: Input::singleton(),
+            face_right: true,
             alive: true,
             aiming: false,
             in_range: false,
             can_aim: true,
             has_jumped: false,
             has_dashed: false,
+            slow_broken: false,
+            dash_direction: Vector2::new(0.0, 0.0),
             can_double_jump: false,
             jump_count: 0,
             speed: 50.0,
@@ -127,98 +135,17 @@ impl ICharacterBody2D for Player {
         self.reset_player();
     }
 
-    fn physics_process(&mut self, delta: f64) {
-
+    fn process(&mut self, _delta: f64) {
         if !self.alive {
             return;
         }
-        
-        let input = Input::singleton();
 
-        let on_floor: bool = self.base().is_on_floor();
+        let direction = self.input.get_axis("move_left", "move_right");
 
-        if !self.base().is_on_floor() {
-            let mut new_velocity = self.base().get_velocity();
-            let mut gravity_slow = 0.0;
-
-            if self.has_jumped && self.base().get_velocity().y > 0.0 {
-                gravity_slow = 500.0;
-                if input.is_action_pressed("move_down") {
-                    gravity_slow = -gravity_slow;
-                }
-            }
-            new_velocity.x += (self.base().get_gravity().x - gravity_slow) * delta as f32;
-            new_velocity.y += (self.base().get_gravity().y - gravity_slow) * delta as f32;
-            self.base_mut().set_velocity(new_velocity);
-        } else {
-            // Reset jump timer whenever we hit the floor
-            self.jump_timer = 0.0;
-            self.jump_count = 0;
-            self.dash_timer = 0.0;
-            self.has_jumped = false;
-            self.has_dashed = false;
-        }
-
-        self.jump(&input);
-
-        let direction = input.get_axis("move_left", "move_right");
-        let hit_vert = input.get_axis("hit_up", "hit_down");
-        let hit_horiz = input.get_axis("hit_left", "hit_right");
-
-        if self.aiming {
-
-            let aim = match &mut self.aim_ind {
-                None => {
-                    godot_print!("No aim ind");
-                    panic!("ahhh");
-                },
-                Some(aim) => aim
-            };
-
-            let aim_in_range = match &mut self.aim_ind_in_range {
-                None => {
-                    godot_print!("No aim ind (in range)");
-                    panic!("ahhh no in range ind");
-                },
-                Some(aim) => aim
-            };
-
-            let mut player_pos: Vector2 = Default::default();
-            {
-                player_pos.x = aim.get_position().x;
-                player_pos.y = aim.get_position().y;
-            }
-
-            aim.set_point_position(1, Vector2::new(
-                    player_pos.x + hit_horiz * 50.0,
-                    player_pos.y + hit_vert * 50.0)
-                );
-
-            aim_in_range.set_point_position(1, Vector2::new(
-                    player_pos.x + hit_horiz * 50.0,
-                    player_pos.y + hit_vert * 50.0)
-                );
-        }
-
-        if direction != 0.0 && !input.is_action_pressed("aim") {
-            let max_speed = self.max_speed as f32 * direction;
-            let mut vel_x = self.base().get_velocity().x;
-
-            // reset to zero if changing direction
-            if direction < 0.0 && self.base().get_velocity().x > 0.2 {
-                vel_x = 0.0;
-            } else if direction > 0.0 && self.base().get_velocity().x < -0.2 {
-                vel_x = 0.0;
-            }
-            
-            vel_x += direction * self.speed as f32 * self.game_speed as f32;
-            let vel_y = self.base().get_velocity().y as f32;
-            if max_speed > 0.0 && vel_x > max_speed{
-                vel_x = max_speed as f32;
-            } else if max_speed < 0.0 && vel_x < max_speed as f32 {
-                vel_x = max_speed as f32;
-            }
-            self.base_mut().set_velocity(Vector2::new(vel_x, vel_y));
+        let on_floor = self.base().is_on_floor();
+        let vel_y = self.base().get_velocity().y;
+        if direction != 0.0 {
+            self.face_right = direction > 0.0;
             // play run animation
             let char_sprite: &mut Gd<AnimatedSprite2D> = match &mut self.sprite {
                 None => panic!("No animated sprite attached to player"),
@@ -246,9 +173,6 @@ impl ICharacterBody2D for Player {
                 }
             }
         } else {
-            let vel_x = move_toward(self.base().get_velocity().x as f64, 0.0, self.speed * self.game_speed as f64);
-            let vel_y = self.base().get_velocity().y as f32;
-            self.base_mut().set_velocity(Vector2::new(vel_x as f32, vel_y));
             let char_sprite: &mut Gd<AnimatedSprite2D> = match &mut self.sprite {
                 None => panic!("No animated sprite attached to player"),
                 Some(anim_sprite) => anim_sprite,
@@ -267,27 +191,97 @@ impl ICharacterBody2D for Player {
                     char_sprite.set_animation("fall");
                 }
             }
+
+        }
+
+    }
+
+    fn physics_process(&mut self, delta: f64) {
+
+        if !self.alive {
+            return;
+        }
+        
+        let input = Input::singleton();
+
+        if !self.base().is_on_floor() {
+            let mut new_velocity = self.base().get_velocity();
+            let mut gravity_slow = 0.0;
+
+            if self.has_jumped && !self.has_dashed && self.base().get_velocity().y > 0.0 {
+                gravity_slow = 500.0;
+                if input.is_action_pressed("move_down") {
+                    gravity_slow = -gravity_slow;
+                }
+            }
+            new_velocity.x += (self.base().get_gravity().x - gravity_slow) * delta as f32;
+            new_velocity.y += (self.base().get_gravity().y - gravity_slow) * delta as f32;
+            self.base_mut().set_velocity(new_velocity);
+        } else {
+            // Reset jump timer whenever we hit the floor
+            self.jump_timer = 0.0;
+            self.jump_count = 0;
+            self.dash_timer = 0.0;
+            self.has_jumped = false;
+            self.has_dashed = false;
+        }
+
+        self.jump(&input);
+
+        let direction = input.get_axis("move_left", "move_right");
+        let hit_vert = input.get_axis("hit_up", "hit_down");
+        let hit_horiz = input.get_axis("hit_left", "hit_right");
+
+        if self.aiming {
+            self.aim(hit_horiz, hit_vert);
+        }
+
+
+        if direction != 0.0 && !input.is_action_pressed("aim") {
+            let max_speed = self.max_speed as f32 * direction;
+            let mut vel_x = self.base().get_velocity().x;
+
+            // reset to zero if changing direction
+            if direction < 0.0 && self.base().get_velocity().x > 0.2 {
+                vel_x = 0.0;
+            } else if direction > 0.0 && self.base().get_velocity().x < -0.2 {
+                vel_x = 0.0;
+            }
+            
+            vel_x += direction * self.speed as f32 * self.game_speed as f32;
+            let vel_y = self.base().get_velocity().y as f32;
+            if max_speed > 0.0 && vel_x > max_speed{
+                vel_x = max_speed as f32;
+            } else if max_speed < 0.0 && vel_x < max_speed as f32 {
+                vel_x = max_speed as f32;
+            }
+            self.base_mut().set_velocity(Vector2::new(vel_x, vel_y));
+        } else {
+            let vel_x = move_toward(self.base().get_velocity().x as f64, 0.0, self.speed * self.game_speed as f64);
+            let vel_y = self.base().get_velocity().y as f32;
+            self.base_mut().set_velocity(Vector2::new(vel_x as f32, vel_y));
         }
 
         // dashing
-        if input.is_action_just_pressed("dash") && !self.has_dashed && self.can_dash(direction) {
+        if input.is_action_just_pressed("dash") && !self.has_dashed && self.can_dash() && self.aiming {
+            self.slow_broken = true;
+            self.signals().break_slow().emit();
             self.has_dashed = true;
-            let vel_y = 0.0;
-            let mut vel_x = 1.0;
-            if direction < 0.0 {
-                vel_x = -1.0;
-            }
-            vel_x *= self.dash_velocity;
+            let vel_x = hit_horiz * self.dash_velocity;
+            let vel_y = hit_vert * self.dash_velocity;
+            self.dash_direction = Vector2::new(vel_x, vel_y);
             self.base_mut().set_velocity(Vector2::new(vel_x, vel_y));
-        } else if input.is_action_pressed("dash") && self.has_dashed && self.can_dash(direction) {
-            let vel_y = 0.0;
-            let mut vel_x = 1.0;
-            if direction < 0.0 {
-                vel_x = -1.0;
-            }
-            vel_x *= self.dash_velocity;
+        } else if input.is_action_pressed("dash") && self.has_dashed && self.can_dash() {
+            let vel_x = self.dash_direction.x;
+            let vel_y = self.dash_direction.y;
+
             self.base_mut().set_velocity(Vector2::new(vel_x, vel_y));
             self.tick_dash();
+        } else if input.is_action_just_released("dash") {
+            self.dash_timer = self.dash_time + 1.0;
+            let mut new_vel = self.base().get_velocity();
+            new_vel.y = new_vel.y / 2.0;
+            self.base_mut().set_velocity(new_vel);
         }
 
         {
@@ -298,9 +292,13 @@ impl ICharacterBody2D for Player {
 
         self.base_mut().move_and_slide();
 
-        if input.is_action_pressed("aim") && self.can_aim {
+        if input.is_action_just_pressed("aim") && self.can_aim {
+            self.slow_broken = false;
             self.can_aim = false;
             self.aiming = true;
+        }
+
+        if input.is_action_pressed("aim") && self.aiming && !self.slow_broken {
             if self.in_range {
                 match &mut self.aim_ind {
                     None => {
@@ -325,28 +323,29 @@ impl ICharacterBody2D for Player {
             } else {
 
                 match &mut self.aim_ind {
-                None => {
-                    godot_print!("Define aim indicator for player");
-                    panic!("No player aim ind");
-                },
-                Some(aim) => {
-                    aim.set_visible(true);
-                }
+                    None => {
+                        godot_print!("Define aim indicator for player");
+                        panic!("No player aim ind");
+                    },
+                    Some(aim) => {
+                        aim.set_visible(true);
+                    }
                 };
 
                 match &mut self.aim_ind_in_range {
-                None => {
-                    godot_print!("Define aim indicator for player");
-                    panic!("No player aim ind");
-                },
-                Some(aim) => {
-                    aim.set_visible(false);
-                }
-            };
+                    None => {
+                        godot_print!("Define aim indicator for player");
+                        panic!("No player aim ind");
+                    },
+                    Some(aim) => {
+                        aim.set_visible(false);
+                    }
+                };
 
             }
         }
-        else if input.is_action_just_pressed("shoot") && self.aiming
+
+        if input.is_action_just_pressed("shoot") && self.aiming
         {
 
             let mouse_position = match &self.base_mut().get_viewport() {
@@ -381,18 +380,9 @@ impl ICharacterBody2D for Player {
                 } 
             }
 
-            let hurt_box = match &self.hurtbox {
-                None => panic!("We should have a hurt box"),
-                Some(hb) => hb,
-            };
-
-            let hazards = hurt_box.get_overlapping_bodies();
-            for _hazard in hazards.iter_shared() {
-                godot_print!("Hitting here {}", self.base().get_position());
-            }
         }
 
-        if input.is_action_just_released("aim") && !self.can_aim {
+        if (input.is_action_just_released("aim") && !self.can_aim) || self.slow_broken {
             self.can_aim = true;
             self.aiming = false;
             match &mut self.aim_ind {
@@ -439,6 +429,9 @@ impl Player {
 
     #[signal]
     pub fn hit_hazard();
+
+    #[signal]
+    pub fn break_slow();
 
     #[func]
     pub fn reset_player(&mut self) {
@@ -517,10 +510,7 @@ impl Player {
         }  
     }
 
-    fn can_dash(&mut self, direction: f32) -> bool {
-        if direction == 0.0 {
-            return false;
-        }
+    fn can_dash(&mut self) -> bool {
         if self.base().is_on_floor() {
             return true;
         }
@@ -534,6 +524,10 @@ impl Player {
     fn tick_dash(&mut self) {
         if self.dash_timer < self.dash_time {
             self.dash_timer += 1.0 * self.game_speed;
+        } else {
+            let mut new_vel = self.base().get_velocity();
+            new_vel.y = new_vel.y / 2.0;
+            self.base_mut().set_velocity(new_vel);
         }
     }
 
@@ -568,6 +562,41 @@ impl Player {
             return true;
         }
         return false;
+    }
+
+    fn aim(&mut self, hit_horiz: f32, hit_vert: f32) {
+        let aim = match &mut self.aim_ind {
+            None => {
+                godot_print!("No aim ind");
+                panic!("ahhh");
+            },
+            Some(aim) => aim
+        };
+
+        let aim_in_range = match &mut self.aim_ind_in_range {
+            None => {
+                godot_print!("No aim ind (in range)");
+                panic!("ahhh no in range ind");
+            },
+            Some(aim) => aim
+        };
+
+        let mut player_pos: Vector2 = Default::default();
+        {
+            player_pos.x = aim.get_position().x;
+            player_pos.y = aim.get_position().y;
+        }
+
+        aim.set_point_position(1, Vector2::new(
+                player_pos.x + hit_horiz * 50.0,
+                player_pos.y + hit_vert * 50.0)
+            );
+
+        aim_in_range.set_point_position(1, Vector2::new(
+                player_pos.x + hit_horiz * 50.0,
+                player_pos.y + hit_vert * 50.0)
+            );
+
     }
 
 
