@@ -8,6 +8,8 @@ pub struct CameraArea {
     camera: OnReady<Gd<GameCamera>>,
     #[export]
     camera_pos: Option<Gd<Node2D>>,
+    #[export]
+    camera_zoom: f32,
     base: Base<Area2D>,
 }
 
@@ -17,6 +19,7 @@ impl IArea2D for CameraArea {
         Self {
             camera: OnReady::from_node("/root/Game/Camera"),
             camera_pos: None,
+            camera_zoom: 1.0,
             base,
         }
     }
@@ -39,7 +42,9 @@ impl CameraArea {
                 None => Vector2::new(0.0, 0.0),
                 Some(pos) => pos.get_global_position()
             };
+            let zoom = self.camera_zoom;
             self.camera.bind_mut().set_target_pos(cam_pos);
+            self.camera.bind_mut().set_target_zoom(zoom);
         }
     }
 }

@@ -34,5 +34,10 @@ impl GameCamera {
     pub fn set_target_pos(&mut self, target: Vector2) {
         self.target_pos = target;
     }
+
+    #[func]
+    pub fn set_target_zoom(&mut self, zoom: f32) {
+        self.base_mut().set_zoom(Vector2::new(zoom, zoom));
+    }
 }
 
