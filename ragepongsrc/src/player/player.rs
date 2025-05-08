@@ -1,8 +1,8 @@
 use core::panic;
 
-use godot::{builtin::Vector2, classes::{ AnimatedSprite2D, Area2D, CharacterBody2D, ICharacterBody2D, Input, Line2D, Node2D }, global::{godot_print, move_toward}, obj::{Base, Gd, WithBaseField, WithUserSignals}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::Vector2, classes::{ AnimatedSprite2D, Area2D, CharacterBody2D, ICharacterBody2D, Input, Line2D, Node2D }, global::{godot_print, move_toward}, obj::{Base, Gd, OnReady, WithBaseField, WithUserSignals}, prelude::{godot_api, GodotClass}};
 
-use crate::{obstacles::{laser_gate::LaserGate, switch::Switch}, player::pong::Pong};
+use crate::{core::colour_component::ColourComponent, obstacles::{laser_gate::LaserGate, switch::Switch}, player::pong::Pong};
 
 #[derive(GodotClass)]
 #[class(base=CharacterBody2D)]
@@ -16,6 +16,8 @@ pub struct Player {
     has_jumped: bool,
     has_dashed: bool,
     slow_broken: bool,
+    on_ball: bool,
+    ball: Option<Gd<Pong>>,
     dash_direction: Vector2,
     #[export]
     can_double_jump: bool,
@@ -51,6 +53,8 @@ pub struct Player {
     aim_ind: Option<Gd<Line2D>>,
     #[export]
     aim_ind_in_range: Option<Gd<Line2D>>,
+    #[export]
+    colour_component: Option<Gd<ColourComponent>>,
     base: Base<CharacterBody2D>,
 }
 
@@ -70,6 +74,8 @@ impl ICharacterBody2D for Player {
             has_jumped: false,
             has_dashed: false,
             slow_broken: false,
+            on_ball: false,
+            ball: None,
             dash_direction: Vector2::new(0.0, 0.0),
             can_double_jump: false,
             jump_count: 0,
@@ -89,6 +95,7 @@ impl ICharacterBody2D for Player {
             start_point: None,
             aim_ind: None,
             aim_ind_in_range: None,
+            colour_component: None,
             base,
         }
     }
@@ -123,6 +130,12 @@ impl ICharacterBody2D for Player {
             .body_entered()
             .connect_obj(&this, |s: &mut Self, body| {
                 s.on_hazard_entered(body);
+            });
+
+        hurt.signals()
+            .body_exited()
+            .connect_obj(&this, |s: &mut Self, body| {
+                s.on_hazard_exited(body);
             });
 
         hurt.signals()
@@ -286,7 +299,15 @@ impl ICharacterBody2D for Player {
 
         {
             let mut new_vel = self.base().get_velocity();
-            new_vel.y *= self.game_speed as f32;
+            let mut pong_vel = Vector2::new(0.0, 0.0);
+            if self.on_ball {
+                pong_vel = match &self.ball {
+                    None => Vector2::new(0.0, 0.0),
+                    Some(p) => p.get_velocity()
+                };
+            }
+            new_vel.x = (new_vel.x + pong_vel.x) * self.game_speed as f32;
+            new_vel.y = (new_vel.y + pong_vel.y) * self.game_speed as f32;
             self.base_mut().set_velocity(new_vel);
         }
 
@@ -465,32 +486,52 @@ impl Player {
     }
 
     fn on_hazard_entered(&mut self, body: Gd<Node2D>) {
-        if body.get_class() == "Pong".into() {
-            // This should not trigger a hazard, ball cannot kill player
+
+        let parent = match body.get_parent() {
+            None => return, // ignore
+            Some(p) => p
+        };
+
+        if parent.get_class() == "Pong".into() {
+            self.on_ball = true;
+            let pong = parent.try_cast::<Pong>().expect("Should be able to cast to Pong");
+            self.ball = Some(pong);
             return;
         }
-        godot_print!("hazard entered");
-        self.alive = false;
-        self.signals().hit_hazard().emit();
+
+        self.kill();
+    }
+
+    fn on_hazard_exited(&mut self, body: Gd<Node2D>) {
+        let parent = match body.get_parent() {
+            None => return, // ignore
+            Some(p) => p
+        };
+
+        if parent.get_class() == "Pong".into() {
+            self.on_ball = false;
+            self.ball = None;
+        }
+
     }
 
     fn on_hazard_area_entered(&mut self, area: Gd<Area2D>) {
-        if area.get_class() == "Pong".into() {
-            // This should not trigger a hazard, ball cannot kill player
+        let parent = match area.get_parent() {
+            None => return, // ignore
+            Some(p) => p
+        };
+
+        if parent.get_class() == "Pong".into() {
             return;
         }
-
-        godot_print!("hazard area entered: {}", area.get_class());
 
         if area.get_class() == "LaserGate".into() {
             let gate = area.cast::<LaserGate>();
             if gate.bind().get_is_open() == false {
-                self.alive = false;
-                self.signals().hit_hazard().emit();
+                self.kill();
             }
         } else {
-            self.alive = false;
-            self.signals().hit_hazard().emit();
+            self.kill();
         }
     }
 
@@ -554,6 +595,11 @@ impl Player {
 
     pub fn update_game_speed(&mut self, speed: f32) {
         self.game_speed = speed;
+    }
+
+    pub fn kill(&mut self) {
+        self.alive = false;
+        self.signals().hit_hazard().emit();
     }
 
     fn can_dbl_jump(&mut self) -> bool {

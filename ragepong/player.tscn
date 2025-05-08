@@ -13,7 +13,7 @@ _data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.13296), 0.0, 0.0, 0, 0]
 point_count = 2
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_uhqqe"]
-size = Vector2(18, 21)
+size = Vector2(11, 21)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_4flbx"]
 radius = 58.0775
@@ -283,7 +283,7 @@ gradient = ExtResource("2_1jxqw")
 end_cap_mode = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(-1, 1.5)
+position = Vector2(-2.5, 1.5)
 shape = SubResource("RectangleShape2D_uhqqe")
 
 [node name="HitBox" type="Area2D" parent="."]
@@ -298,7 +298,7 @@ animation = &"idle"
 autoplay = "idle"
 
 [node name="HurtBox" type="Area2D" parent="."]
-collision_layer = 0
+collision_layer = 2
 collision_mask = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HurtBox"]

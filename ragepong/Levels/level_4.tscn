@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3 uid="uid://be41spmwli1cv"]
+
+[ext_resource type="PackedScene" uid="uid://cpsjg3xsij0a2" path="res://Levels/level_template.tscn" id="1_ftfcu"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_e78ah"]
+resource_local_to_scene = true
+size = Vector2(14, 16)
+
+[node name="LevelTemplate" instance=ExtResource("1_ftfcu")]
+
+[node name="CollisionShape2D" parent="LevelEnd/Area2D" index="0"]
+shape = SubResource("RectangleShape2D_e78ah")

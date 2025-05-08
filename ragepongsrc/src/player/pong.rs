@@ -1,6 +1,8 @@
-use godot::{builtin::Vector2, classes::{Area2D, CharacterBody2D, ICharacterBody2D, Node2D}, obj::{Base, Gd, WithBaseField}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::Vector2, classes::{Area2D, CharacterBody2D, ICharacterBody2D, Node2D}, global::godot_print, obj::{Base, Gd, OnReady, WithBaseField}, prelude::{godot_api, GodotClass}};
 
-use crate::obstacles::pong_lock::PongLock;
+use crate::{core::{colour_component::ColourComponent, colours::Colour}, obstacles::pong_lock::PongLock};
+
+use super::player::Player;
 
 #[derive(GodotClass)]
 #[class(base=CharacterBody2D)]
@@ -13,6 +15,7 @@ pub struct Pong {
     start_dir: Vector2,
     #[export]
     hurtbox: Option<Gd<Area2D>>,
+    colour: OnReady<Gd<ColourComponent>>,
     locked: bool,
     locked_position: Vector2,
     vel_x: f32,
@@ -29,6 +32,7 @@ impl ICharacterBody2D for Pong {
             start_point: None,
             start_dir: Vector2::new(0.0, 0.0),
             hurtbox: None,
+            colour: OnReady::from_node("ColourComponent"),
             locked: false,
             locked_position: Vector2::new(0.0, 0.0),
             vel_x: 1.0,
@@ -52,6 +56,12 @@ impl ICharacterBody2D for Pong {
                 s.on_hazard_entered(body);
         });
 
+        hurt.signals()
+            .area_entered()
+            .connect_obj(&this, |s: &mut Self, area| {
+                s.on_area_entered(area);
+            });
+
         self.reset();
     }
 
@@ -71,18 +81,25 @@ impl ICharacterBody2D for Pong {
                         true
                     },
                 };
-                if collided {
-                    self.reverse_direction();
+               if collided {
+
+                    let col_obj = match collision {
+                        None => panic!("Collision vanished!"),
+                        Some(obj) => obj
+                    };
+
+                    let collider = match col_obj.get_collider() {
+                        None => panic!("No collider"),
+                        Some(col) => col
+                    };
+
+                    if collider.get_class() != "Player".into() {
+                        self.reverse_direction();
+                    }
                 }
             }
 
         } else {
-            //let vel_x = move_toward(self.base().get_position().x as f64,
-            //    self.locked_position.x as f64, 0.2);
-            //let vel_y = move_toward(self.base().get_position().y as f64,
-            //    self.locked_position.y as f64, 0.2);
-            //self.base_mut().set_velocity(Vector2::new(vel_x as f32, vel_y as f32));
-            //self.base_mut().move_and_slide();
             let l_pos = self.locked_position;
             self.base_mut().set_position(l_pos);
         }
@@ -131,6 +148,11 @@ impl Pong {
         self.locked = false;
     }
 
+    #[func]
+    pub fn get_colour(&mut self) -> Colour {
+        return self.colour.bind().get_obj_colour();
+    }
+
     pub fn update_game_speed(&mut self, speed: f32) {
         self.game_speed = speed;
     }
@@ -138,4 +160,21 @@ impl Pong {
     fn on_hazard_entered(&mut self, _body: Gd<Node2D>) {
         self.reset();
     }
+
+    fn on_area_entered(&mut self, area: Gd<Area2D>) {
+        let parent = match area.get_parent() {
+            None => return, // ignore
+            Some(p) => p
+        };
+
+        if parent.get_class() == "Player".into() {
+            let mut player = parent.cast::<Player>();
+            let colour = self.get_colour();
+            if colour == Colour::Red {
+                player.bind_mut().kill();
+            }
+        }
+
+    }
+
 }
