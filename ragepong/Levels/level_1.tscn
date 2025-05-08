@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=4 uid="uid://c1i4ptxgys1bo"]
+[gd_scene load_steps=10 format=4 uid="uid://c1i4ptxgys1bo"]
 
 [ext_resource type="PackedScene" uid="uid://cjohd85hul5i3" path="res://Obstacles/StaticPaddle.tscn" id="1_dilhk"]
 [ext_resource type="PackedScene" uid="uid://ddixlv1rbvpr4" path="res://Levels/TestTileMap.tscn" id="1_n0qsc"]
@@ -19,11 +19,16 @@ size = Vector2(152, 16)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_rf6l5"]
 size = Vector2(167, 159)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_rfktq"]
+resource_local_to_scene = true
+size = Vector2(16, 120)
+
 [node name="Level1" type="Level" node_paths=PackedStringArray("obstacles", "level_end", "player_start", "pong_start")]
 obstacles = [NodePath("LaserGate"), NodePath("PongLock"), NodePath("StaticPaddleContainer/StaticPaddle")]
 level_end = NodePath("LevelEnd")
 player_start = NodePath("PlayerStart")
 pong_start = NodePath("PongStart")
+pong_colour = "Green"
 pong_direction = Vector2(1, 0)
 
 [node name="StaticPaddleContainer" parent="." instance=ExtResource("1_dilhk")]
@@ -46,12 +51,12 @@ tile_map_data = PackedByteArray("AACPAFAAAAACAAIAAACPAE8AAAACAAEAAACPAE4AAAACAAE
 position = Vector2(151, 583)
 
 [node name="PongStart" type="Node2D" parent="."]
-position = Vector2(351, 583)
+position = Vector2(120, 584)
 
 [node name="LevelEnd" type="LevelEnd" parent="." node_paths=PackedStringArray("area")]
 next_level = "level_2.tscn"
 area = NodePath("Area2D")
-position = Vector2(712, 560)
+position = Vector2(736, 560)
 metadata/_edit_group_ = true
 
 [node name="Area2D" type="Area2D" parent="LevelEnd"]
@@ -61,17 +66,22 @@ position = Vector2(0, -6)
 shape = SubResource("RectangleShape2D_n0qsc")
 
 [node name="PongLock" parent="." node_paths=PackedStringArray("activatables") instance=ExtResource("3_3mhv4")]
-activatables = [NodePath("../LaserGate")]
+activatables = [NodePath("../LaserGate2")]
 position = Vector2(128, 391)
 
 [node name="LaserGate" parent="." instance=ExtResource("4_rf6l5")]
-position = Vector2(376, 536)
+starting_colour = "Green"
+position = Vector2(376, 544)
 rotation = 1.5708
 metadata/_edit_group_ = true
 
 [node name="CollisionShape2D" parent="LaserGate" index="0"]
 position = Vector2(-4, 0)
 shape = SubResource("RectangleShape2D_syshm")
+
+[node name="ColorRect" parent="LaserGate" index="1"]
+offset_left = -80.0
+offset_right = 72.0
 
 [node name="CameraArea" type="CameraArea" parent="." node_paths=PackedStringArray("camera_pos")]
 camera_pos = NodePath("CamPos")
@@ -84,5 +94,17 @@ shape = SubResource("RectangleShape2D_rf6l5")
 [node name="CamPos" type="Node2D" parent="CameraArea"]
 position = Vector2(96, 128)
 
+[node name="LaserGate2" parent="." instance=ExtResource("4_rf6l5")]
+position = Vector2(712, 568)
+
+[node name="CollisionShape2D" parent="LaserGate2" index="0"]
+position = Vector2(0, -12)
+shape = SubResource("RectangleShape2D_rfktq")
+
+[node name="ColorRect" parent="LaserGate2" index="1"]
+offset_top = -72.0
+offset_bottom = 48.0
+
 [editable path="StaticPaddleContainer"]
 [editable path="LaserGate"]
+[editable path="LaserGate2"]

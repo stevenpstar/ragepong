@@ -1,4 +1,4 @@
-use godot::{classes::{Area2D, IArea2D}, obj::{Base, Gd, OnReady, WithBaseField}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::Color, classes::{Area2D, ColorRect, IArea2D}, global::godot_print, obj::{Base, Gd, OnReady, WithBaseField}, prelude::{godot_api, GodotClass}};
 
 use crate::core::{colour_component::ColourComponent, colours::Colour};
 
@@ -7,6 +7,10 @@ use crate::core::{colour_component::ColourComponent, colours::Colour};
 pub struct LaserGate {
     #[export]
     open: bool,
+    #[export]
+    colour_rect: Option<Gd<ColorRect>>,
+    #[export]
+    starting_colour: Colour,
     colour: OnReady<Gd<ColourComponent>>,
     is_open: bool,
     base: Base<Area2D>,
@@ -18,6 +22,8 @@ impl IArea2D for LaserGate {
         Self {
             open: false,
             colour: OnReady::from_node("ColourComponent"),
+            colour_rect: None,
+            starting_colour: Colour::White,
             is_open: false,
             base,
         }
@@ -25,6 +31,8 @@ impl IArea2D for LaserGate {
 
     fn ready(&mut self) {
         self.is_open = self.open;
+        let c = Colour::get_colour(&self.starting_colour);
+        self.set_gate_colour(&c);
     }
 }
 
@@ -53,5 +61,26 @@ impl LaserGate {
     pub fn get_colour(&mut self) -> Colour {
         return self.colour.bind().get_obj_colour();
     }
+
+    fn set_gate_colour(&mut self, colour: &Colour) {
+
+        self.colour.bind_mut().set_obj_colour(colour);
+
+        let colour_rect = match &mut self.colour_rect {
+            None => {
+                godot_print!("gate should have a colour rect");
+                panic!("No gate rect for player!");
+            },
+            Some(spr) => spr
+        };
+
+        match colour {
+            Colour::White => colour_rect.set_modulate(Color::from_rgb(1.0, 1.0, 1.0)),
+            Colour::Red => colour_rect.set_modulate(Color::from_rgb(1.0, 0.0, 0.0)),
+            Colour::Blue => colour_rect.set_modulate(Color::from_rgb(0.0, 0.0, 1.0)),
+            Colour::Green => colour_rect.set_modulate(Color::from_rgb(0.0, 1.0, 0.0)),
+        };
+    }
+
 
 }

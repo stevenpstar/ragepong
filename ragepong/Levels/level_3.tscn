@@ -30,6 +30,7 @@ size = Vector2(80, 16)
 size = Vector2(284.019, 210)
 
 [node name="Level3" instance=ExtResource("1_5lru4")]
+pong_colour = "Red"
 pong_direction = Vector2(-1, 0)
 
 [node name="LevelEnd" parent="." index="0"]
@@ -82,6 +83,10 @@ scale = Vector2(0.467118, 1)
 [node name="CollisionShape2D" parent="LaserGate" index="0"]
 position = Vector2(0, -6.10352e-05)
 shape = SubResource("RectangleShape2D_uwxw1")
+
+[node name="ColorRect" parent="LaserGate" index="1"]
+offset_left = -85.0
+offset_right = 85.0
 
 [node name="Switch" parent="." index="6" node_paths=PackedStringArray("activatables") instance=ExtResource("4_absw3")]
 activatables = [NodePath("../LaserGate"), NodePath("../LaserGate2")]

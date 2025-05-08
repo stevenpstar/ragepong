@@ -2,7 +2,7 @@ use core::panic;
 
 use godot::{builtin::{Color, Vector2}, classes::{ AnimatedSprite2D, Area2D, CharacterBody2D, ICharacterBody2D, Input, Line2D, Node2D }, global::{godot_print, move_toward}, obj::{Base, Gd, WithBaseField, WithUserSignals}, prelude::{godot_api, GodotClass}};
 
-use crate::{core::{colour_component::{self, ColourComponent}, colours::Colour}, obstacles::{laser_gate::LaserGate, switch::Switch}, player::pong::Pong};
+use crate::{core::{colour_component::ColourComponent, colours::Colour}, obstacles::{laser_gate::LaserGate, switch::Switch}, player::pong::Pong};
 
 #[derive(GodotClass)]
 #[class(base=CharacterBody2D)]
@@ -15,6 +15,7 @@ pub struct Player {
     can_aim: bool,
     has_jumped: bool,
     has_dashed: bool,
+    is_dashing: bool,
     slow_broken: bool,
     on_ball: bool,
     ball: Option<Gd<Pong>>,
@@ -73,6 +74,7 @@ impl ICharacterBody2D for Player {
             can_aim: true,
             has_jumped: false,
             has_dashed: false,
+            is_dashing: false,
             slow_broken: false,
             on_ball: false,
             ball: None,
@@ -103,7 +105,7 @@ impl ICharacterBody2D for Player {
     fn ready(&mut self) {
         let this = self.to_gd();
         let col = &self.get_colour();
-        self.set_pong_colour(col);
+        self.set_player_colour(col);
 
         godot_print!("This should be called on ready");
         let hb: &mut Gd<Area2D> = match &mut self.hittingbox {
@@ -289,6 +291,7 @@ impl ICharacterBody2D for Player {
             self.slow_broken = true;
             self.signals().break_slow().emit();
             self.has_dashed = true;
+            self.is_dashing = true;
             let vel_x = hit_horiz * self.dash_velocity;
             let vel_y = hit_vert * self.dash_velocity;
             self.dash_direction = Vector2::new(vel_x, vel_y);
@@ -300,7 +303,7 @@ impl ICharacterBody2D for Player {
             self.base_mut().set_velocity(Vector2::new(vel_x, vel_y));
             self.tick_dash();
         } else if input.is_action_just_released("dash") {
-            self.dash_timer = self.dash_time + 1.0;
+            self.is_dashing = false;
             let mut new_vel = self.base().get_velocity();
             new_vel.y = new_vel.y / 2.0;
             self.base_mut().set_velocity(new_vel);
@@ -409,7 +412,7 @@ impl ICharacterBody2D for Player {
                     let ball_col = b.bind_mut().get_colour();
                     b.bind_mut().unlock();
                     b.bind_mut().hit_direction(hit_direction);
-                    self.set_pong_colour(&ball_col);
+                    self.set_player_colour(&ball_col);
                 } 
             }
 
@@ -529,9 +532,18 @@ impl Player {
         }
 
         if area.get_class() == "LaserGate".into() {
-            let gate = area.cast::<LaserGate>();
-            if gate.bind().get_is_open() == false {
+            let mut gate = area.cast::<LaserGate>();
+            let gate_col = gate.bind_mut().get_colour();
+            let player_col = self.get_colour();
+            if gate.bind().get_is_open() == false && gate_col != player_col {
                 self.kill();
+            } else if gate.bind().get_is_open() == false && gate_col == player_col {
+                godot_print!("Resetting dash and jump");
+                self.has_jumped = false;
+                self.jump_count = 0;
+                self.jump_timer = 0.0;
+                self.has_dashed = false;
+                self.dash_timer = 0.0;
             }
         } else {
             self.kill();
@@ -567,6 +579,9 @@ impl Player {
     }
 
     fn can_dash(&mut self) -> bool {
+        if self.has_dashed {
+            return false;
+        }
         if self.base().is_on_floor() {
             return true;
         }
@@ -581,6 +596,7 @@ impl Player {
         if self.dash_timer < self.dash_time {
             self.dash_timer += 1.0 * self.game_speed;
         } else {
+            self.is_dashing = false;
             let mut new_vel = self.base().get_velocity();
             new_vel.y = new_vel.y / 2.0;
             self.base_mut().set_velocity(new_vel);
@@ -671,7 +687,7 @@ impl Player {
         return colour.bind().get_obj_colour();
     }
 
-    fn set_pong_colour(&mut self, colour: &Colour) {
+    fn set_player_colour(&mut self, colour: &Colour) {
 
         let colour_comp = match &mut self.colour_component {
             None => {

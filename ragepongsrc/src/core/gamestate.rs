@@ -173,6 +173,8 @@ impl GameState {
         {
             for mut pong in &mut self.balls.iter_shared() {
                 pong.bind_mut().set_start_dir(next_level.bind().get_pong_direction());
+                let col = next_level.bind().get_png_colour();
+                pong.bind_mut().set_pong_colour(&col);
             }
         }
 

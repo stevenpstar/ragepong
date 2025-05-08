@@ -1,6 +1,6 @@
-use godot::{builtin::Vector2, classes::{Area2D, CharacterBody2D, ICharacterBody2D, Node2D, Sprite2D}, obj::{Base, Gd, OnReady, WithBaseField}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::Vector2, classes::{Area2D, CharacterBody2D, ICharacterBody2D, Node2D, Sprite2D}, global::godot_print, obj::{Base, Gd, OnReady, WithBaseField}, prelude::{godot_api, GodotClass}};
 
-use crate::{core::{colour_component::ColourComponent, colours::Colour}, obstacles::pong_lock::PongLock};
+use crate::{core::{colour_component::ColourComponent, colours::Colour}, obstacles::{laser_gate::LaserGate, pong_lock::PongLock}};
 
 use super::player::Player;
 
@@ -70,7 +70,6 @@ impl ICharacterBody2D for Pong {
                 s.on_area_entered(area);
             });
         
-        self.set_pong_colour();
         self.reset();
     }
 
@@ -167,7 +166,12 @@ impl Pong {
         return self.speed;
     }
     
-    fn set_pong_colour(&mut self) {
+    pub fn set_pong_colour(&mut self, col: &Colour) {
+
+        let colour_comp = &mut self.colour;
+
+        colour_comp.bind_mut().set_obj_colour(col);
+
         self.white_sprite.set_visible(false);
         self.red_sprite.set_visible(false);
         self.blue_sprite.set_visible(false);
@@ -194,13 +198,27 @@ impl Pong {
             Some(p) => p
         };
 
+
+        godot_print!("parent area entered {}", parent.get_class());
+
         if parent.get_class() == "Player".into() {
             let mut player = parent.cast::<Player>();
             let colour = self.get_colour();
             if colour == Colour::Red {
                 player.bind_mut().kill();
             }
-        } else if parent.get_class() == "LaserGate".into() {}
+        } else if area.get_class() == "LaserGate".into() {
+            godot_print!("Hit laser gate!");
+            let mut gate = area.cast::<LaserGate>();
+            let ball_colour = self.get_colour();
+            let laser_gate_colour = gate.bind_mut().get_colour();
+            if ball_colour != laser_gate_colour {
+                self.reset();
+                godot_print!("should reset");
+            } else {
+                godot_print!("should not reset");
+            }
+        }
 
     }
 

@@ -2,7 +2,7 @@ use godot::{builtin::{Array, Vector2}, classes::{INode2D, Node2D}, obj::{Base, G
 
 use crate::obstacles::laser_gate::LaserGate;
 
-use super::level_end::LevelEnd;
+use super::{colours::Colour, level_end::LevelEnd};
 
 #[derive(GodotClass)]
 #[class(base=Node2D)]
@@ -16,6 +16,8 @@ pub struct Level {
     #[export]
     pong_start: Option<Gd<Node2D>>,
     #[export]
+    pong_colour: Colour,
+    #[export]
     pong_direction: Vector2,
     base: Base<Node2D>,
 }
@@ -28,6 +30,7 @@ impl INode2D for Level {
             level_end: None,
             player_start: None,
             pong_start: None,
+            pong_colour: Colour::White,
             pong_direction: Vector2::new(0.0, 0.0),
             base,
         }
@@ -64,6 +67,11 @@ impl Level {
                 gate.bind_mut().reset();
             }
         }
+    }
+
+    #[func]
+    pub fn get_png_colour(&self) -> Colour {
+        return Colour::get_colour(&self.pong_colour);
     }
 
 }

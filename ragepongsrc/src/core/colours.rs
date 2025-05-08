@@ -9,3 +9,16 @@ pub enum Colour {
     Green
 }
 
+impl Colour {
+    pub fn get_colour(col: &Colour) -> Colour {
+        let c =  match &col {
+            Colour::White => Colour::White,
+            Colour::Red => Colour::Red,
+            Colour::Blue => Colour::Blue,
+            Colour::Green => Colour::Green,
+        };
+
+        return c;
+    }
+}
+
