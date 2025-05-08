@@ -1,4 +1,4 @@
-use godot::{builtin::Vector2, classes::{Area2D, CharacterBody2D, ICharacterBody2D, Node2D}, global::godot_print, obj::{Base, Gd, OnReady, WithBaseField}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::Vector2, classes::{Area2D, CharacterBody2D, ICharacterBody2D, Node2D, Sprite2D}, obj::{Base, Gd, OnReady, WithBaseField}, prelude::{godot_api, GodotClass}};
 
 use crate::{core::{colour_component::ColourComponent, colours::Colour}, obstacles::pong_lock::PongLock};
 
@@ -15,6 +15,10 @@ pub struct Pong {
     start_dir: Vector2,
     #[export]
     hurtbox: Option<Gd<Area2D>>,
+    white_sprite: OnReady<Gd<Sprite2D>>,
+    red_sprite: OnReady<Gd<Sprite2D>>,
+    blue_sprite: OnReady<Gd<Sprite2D>>,
+    green_sprite: OnReady<Gd<Sprite2D>>,
     colour: OnReady<Gd<ColourComponent>>,
     locked: bool,
     locked_position: Vector2,
@@ -33,6 +37,10 @@ impl ICharacterBody2D for Pong {
             start_dir: Vector2::new(0.0, 0.0),
             hurtbox: None,
             colour: OnReady::from_node("ColourComponent"),
+            white_sprite: OnReady::from_node("WhitePong"),
+            red_sprite: OnReady::from_node("RedPong"),
+            blue_sprite: OnReady::from_node("BluePong"),
+            green_sprite: OnReady::from_node("GreenPong"),
             locked: false,
             locked_position: Vector2::new(0.0, 0.0),
             vel_x: 1.0,
@@ -61,7 +69,8 @@ impl ICharacterBody2D for Pong {
             .connect_obj(&this, |s: &mut Self, area| {
                 s.on_area_entered(area);
             });
-
+        
+        self.set_pong_colour();
         self.reset();
     }
 
@@ -153,6 +162,24 @@ impl Pong {
         return self.colour.bind().get_obj_colour();
     }
 
+    #[func]
+    pub fn get_pong_speed(&self) -> f64 {
+        return self.speed;
+    }
+    
+    fn set_pong_colour(&mut self) {
+        self.white_sprite.set_visible(false);
+        self.red_sprite.set_visible(false);
+        self.blue_sprite.set_visible(false);
+        self.green_sprite.set_visible(false);
+        match self.get_colour() {
+            Colour::White => self.white_sprite.set_visible(true),
+            Colour::Red => self.red_sprite.set_visible(true),
+            Colour::Blue => self.blue_sprite.set_visible(true),
+            Colour::Green => self.green_sprite.set_visible(true),
+        };
+    }
+
     pub fn update_game_speed(&mut self, speed: f32) {
         self.game_speed = speed;
     }
@@ -173,7 +200,7 @@ impl Pong {
             if colour == Colour::Red {
                 player.bind_mut().kill();
             }
-        }
+        } else if parent.get_class() == "LaserGate".into() {}
 
     }
 

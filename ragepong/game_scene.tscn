@@ -19,9 +19,19 @@ start_point = NodePath("../PlayerStart")
 position = Vector2(-68, 336)
 metadata/_edit_group_ = true
 
+[node name="BallTrail" type="BallTrail" parent="." node_paths=PackedStringArray("pong")]
+pong = NodePath("../Pong")
+points = PackedVector2Array(314, 560)
+width = 8.0
+width_curve = SubResource("Curve_sasra")
+gradient = SubResource("Gradient_sasra")
+begin_cap_mode = 2
+end_cap_mode = 2
+
 [node name="Pong" parent="." node_paths=PackedStringArray("start_point") instance=ExtResource("3_sasra")]
+speed = 250.0
 start_point = NodePath("../PongStart")
-position = Vector2(-37, 217)
+position = Vector2(32, 584)
 metadata/_edit_group_ = true
 
 [node name="GameState" type="GameState" parent="." node_paths=PackedStringArray("player", "balls", "player_start", "pong_start")]
@@ -32,15 +42,6 @@ pong_start = NodePath("../PongStart")
 levels = Array[String](["test_level", "level_1"])
 base_path = "res://Levels/"
 level_str = "movement_testing.tscn"
-
-[node name="BallTrail" type="BallTrail" parent="." node_paths=PackedStringArray("pong")]
-pong = NodePath("../Pong")
-points = PackedVector2Array(314, 560)
-width = 8.0
-width_curve = SubResource("Curve_sasra")
-gradient = SubResource("Gradient_sasra")
-begin_cap_mode = 2
-end_cap_mode = 2
 
 [node name="PlayerStart" type="Node2D" parent="."]
 position = Vector2(-31, 257)

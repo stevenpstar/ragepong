@@ -13,7 +13,7 @@ _data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.13296), 0.0, 0.0, 0, 0]
 point_count = 2
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_uhqqe"]
-size = Vector2(11, 21)
+size = Vector2(14, 21)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_4flbx"]
 radius = 58.0775
@@ -250,9 +250,9 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_2hs0m"]
-size = Vector2(11, 21)
+size = Vector2(14, 23)
 
-[node name="Player" type="Player" node_paths=PackedStringArray("hittingbox", "hurtbox", "sprite", "aim_ind", "aim_ind_in_range")]
+[node name="Player" type="Player" node_paths=PackedStringArray("hittingbox", "hurtbox", "sprite", "aim_ind", "aim_ind_in_range", "colour_component")]
 can_double_jump = true
 speed = 25.0
 max_speed = 250.0
@@ -262,9 +262,10 @@ dash_velocity = 600.0
 dash_time = 6.0
 hittingbox = NodePath("HitBox")
 hurtbox = NodePath("HurtBox")
-sprite = NodePath("AnimatedSprite")
+sprite = NodePath("CharacterSprite")
 aim_ind = NodePath("AimInd")
 aim_ind_in_range = NodePath("AimIndInRange")
+colour_component = NodePath("ColourComponent")
 
 [node name="AimInd" type="Line2D" parent="."]
 visible = false
@@ -283,7 +284,7 @@ gradient = ExtResource("2_1jxqw")
 end_cap_mode = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(-2.5, 1.5)
+position = Vector2(-2, 1.5)
 shape = SubResource("RectangleShape2D_uhqqe")
 
 [node name="HitBox" type="Area2D" parent="."]
@@ -291,7 +292,7 @@ shape = SubResource("RectangleShape2D_uhqqe")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HitBox"]
 shape = SubResource("CircleShape2D_4flbx")
 
-[node name="AnimatedSprite" type="AnimatedSprite2D" parent="."]
+[node name="CharacterSprite" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
 sprite_frames = SubResource("SpriteFrames_dw050")
 animation = &"idle"
@@ -302,5 +303,7 @@ collision_layer = 2
 collision_mask = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HurtBox"]
-position = Vector2(-2.5, 1.5)
+position = Vector2(-2, 1.5)
 shape = SubResource("RectangleShape2D_2hs0m")
+
+[node name="ColourComponent" type="ColourComponent" parent="."]

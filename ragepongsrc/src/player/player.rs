@@ -1,8 +1,8 @@
 use core::panic;
 
-use godot::{builtin::Vector2, classes::{ AnimatedSprite2D, Area2D, CharacterBody2D, ICharacterBody2D, Input, Line2D, Node2D }, global::{godot_print, move_toward}, obj::{Base, Gd, OnReady, WithBaseField, WithUserSignals}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::{Color, Vector2}, classes::{ AnimatedSprite2D, Area2D, CharacterBody2D, ICharacterBody2D, Input, Line2D, Node2D }, global::{godot_print, move_toward}, obj::{Base, Gd, WithBaseField, WithUserSignals}, prelude::{godot_api, GodotClass}};
 
-use crate::{core::colour_component::ColourComponent, obstacles::{laser_gate::LaserGate, switch::Switch}, player::pong::Pong};
+use crate::{core::{colour_component::{self, ColourComponent}, colours::Colour}, obstacles::{laser_gate::LaserGate, switch::Switch}, player::pong::Pong};
 
 #[derive(GodotClass)]
 #[class(base=CharacterBody2D)]
@@ -102,6 +102,8 @@ impl ICharacterBody2D for Player {
 
     fn ready(&mut self) {
         let this = self.to_gd();
+        let col = &self.get_colour();
+        self.set_pong_colour(col);
 
         godot_print!("This should be called on ready");
         let hb: &mut Gd<Area2D> = match &mut self.hittingbox {
@@ -143,6 +145,13 @@ impl ICharacterBody2D for Player {
             .connect_obj(&this, |s: &mut Self, area| {
                 s.on_hazard_area_entered(area);
             });
+
+        hurt.signals()
+            .area_exited()
+            .connect_obj(&this, |s: &mut Self, area| {
+                s.on_hazard_area_exited(area);
+            });
+
 
         // set player spawn
         self.reset_player();
@@ -299,15 +308,16 @@ impl ICharacterBody2D for Player {
 
         {
             let mut new_vel = self.base().get_velocity();
-            let mut pong_vel = Vector2::new(0.0, 0.0);
+            new_vel.x = new_vel.x * self.game_speed as f32;
+            new_vel.y = new_vel.y * self.game_speed as f32;
             if self.on_ball {
-                pong_vel = match &self.ball {
-                    None => Vector2::new(0.0, 0.0),
-                    Some(p) => p.get_velocity()
+                let ball = match &self.ball {
+                    None => panic!("Ball not found!"),
+                    Some(b) => b
                 };
+                new_vel.y = 0.0 + -ball.bind().get_pong_speed() as f32 * 1.7 as f32;
             }
-            new_vel.x = (new_vel.x + pong_vel.x) * self.game_speed as f32;
-            new_vel.y = (new_vel.y + pong_vel.y) * self.game_speed as f32;
+
             self.base_mut().set_velocity(new_vel);
         }
 
@@ -396,8 +406,10 @@ impl ICharacterBody2D for Player {
             for ball in balls.iter_shared() {
                 if ball.get_class() == "Pong".into() {
                     let mut b = ball.cast::<Pong>();
+                    let ball_col = b.bind_mut().get_colour();
                     b.bind_mut().unlock();
                     b.bind_mut().hit_direction(hit_direction);
+                    self.set_pong_colour(&ball_col);
                 } 
             }
 
@@ -493,26 +505,14 @@ impl Player {
         };
 
         if parent.get_class() == "Pong".into() {
-            self.on_ball = true;
-            let pong = parent.try_cast::<Pong>().expect("Should be able to cast to Pong");
-            self.ball = Some(pong);
             return;
         }
 
         self.kill();
     }
 
-    fn on_hazard_exited(&mut self, body: Gd<Node2D>) {
-        let parent = match body.get_parent() {
-            None => return, // ignore
-            Some(p) => p
-        };
-
-        if parent.get_class() == "Pong".into() {
-            self.on_ball = false;
-            self.ball = None;
-        }
-
+    fn on_hazard_exited(&mut self, _body: Gd<Node2D>) {
+       // nothing
     }
 
     fn on_hazard_area_entered(&mut self, area: Gd<Area2D>) {
@@ -522,6 +522,9 @@ impl Player {
         };
 
         if parent.get_class() == "Pong".into() {
+            self.on_ball = true;
+            let pong = parent.try_cast::<Pong>().expect("Should be able to cast to Pong");
+            self.ball = Some(pong);
             return;
         }
 
@@ -532,6 +535,18 @@ impl Player {
             }
         } else {
             self.kill();
+        }
+    }
+
+    fn on_hazard_area_exited(&mut self, area: Gd<Area2D>) {
+        let parent = match area.get_parent() {
+            None => return, // ignore
+            Some(p) => p
+        };
+
+        if parent.get_class() == "Pong".into() {
+            self.on_ball = false;
+            self.ball = None;
         }
     }
 
@@ -644,6 +659,46 @@ impl Player {
             );
 
     }
+
+    pub fn get_colour(&mut self) -> Colour {
+        let colour = match &self.colour_component {
+            None => {
+                godot_print!("No colour component on player!");
+                panic!("No colour component on player!");
+            },
+            Some(cc) => cc
+        };
+        return colour.bind().get_obj_colour();
+    }
+
+    fn set_pong_colour(&mut self, colour: &Colour) {
+
+        let colour_comp = match &mut self.colour_component {
+            None => {
+                godot_print!("Player should have a colour component");
+                panic!("No colour component for player!");
+            },
+            Some(cc) => cc
+        };
+
+        colour_comp.bind_mut().set_obj_colour(colour);
+
+        let sprite = match &mut self.sprite {
+            None => {
+                godot_print!("Player should have a character sprite");
+                panic!("No character sprite for player!");
+            },
+            Some(spr) => spr
+        };
+
+        match colour {
+            Colour::White => sprite.set_modulate(Color::from_rgb(1.0, 1.0, 1.0)),
+            Colour::Red => sprite.set_modulate(Color::from_rgb(1.0, 0.0, 0.0)),
+            Colour::Blue => sprite.set_modulate(Color::from_rgb(0.0, 0.0, 1.0)),
+            Colour::Green => sprite.set_modulate(Color::from_rgb(0.0, 1.0, 0.0)),
+        };
+    }
+
 
 
 }

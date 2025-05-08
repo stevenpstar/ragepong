@@ -1,10 +1,13 @@
-use godot::{classes::{Area2D, IArea2D}, obj::{Base, WithBaseField}, prelude::{godot_api, GodotClass}};
+use godot::{classes::{Area2D, IArea2D}, obj::{Base, Gd, OnReady, WithBaseField}, prelude::{godot_api, GodotClass}};
+
+use crate::core::{colour_component::ColourComponent, colours::Colour};
 
 #[derive(GodotClass)]
 #[class(base=Area2D)]
 pub struct LaserGate {
     #[export]
     open: bool,
+    colour: OnReady<Gd<ColourComponent>>,
     is_open: bool,
     base: Base<Area2D>,
 }
@@ -14,6 +17,7 @@ impl IArea2D for LaserGate {
     fn init(base: Base<Area2D>) -> Self {
         Self {
             open: false,
+            colour: OnReady::from_node("ColourComponent"),
             is_open: false,
             base,
         }
@@ -44,4 +48,10 @@ impl LaserGate {
     pub fn get_is_open(&self) -> bool {
         return self.is_open;
     }
+
+    #[func]
+    pub fn get_colour(&mut self) -> Colour {
+        return self.colour.bind().get_obj_colour();
+    }
+
 }

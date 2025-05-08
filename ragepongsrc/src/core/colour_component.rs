@@ -22,8 +22,16 @@ impl INode for ColourComponent {
 
 #[godot_api]
 impl ColourComponent {
-    pub fn set_obj_colour(&mut self, col: Colour) {
-        self.colour = col;
+    pub fn set_obj_colour(&mut self, col: &Colour) {
+
+        let c =  match &col {
+            Colour::White => Colour::White,
+            Colour::Red => Colour::Red,
+            Colour::Blue => Colour::Blue,
+            Colour::Green => Colour::Green,
+        };
+
+        self.colour = c;
     }
 
     pub fn get_obj_colour(&self) -> Colour {

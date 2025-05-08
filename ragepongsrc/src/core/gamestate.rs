@@ -160,7 +160,7 @@ impl GameState {
             pong_start.set_position(next_level.bind().get_pong_start_position());
 
         }
-    
+
         let mut level_opt = next_level.bind_mut().get_level_end();
         let level_end = match &mut level_opt {
             None => {

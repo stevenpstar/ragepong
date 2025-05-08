@@ -1,31 +1,50 @@
-[gd_scene load_steps=4 format=3 uid="uid://bd4bjlwqecxbq"]
+[gd_scene load_steps=6 format=3 uid="uid://bd4bjlwqecxbq"]
 
 [ext_resource type="Texture2D" uid="uid://b3ph4wclhf078" path="res://Assets/ball_high_res.png" id="1_8w31r"]
+[ext_resource type="Texture2D" uid="uid://cfw3h4b01n14g" path="res://Assets/ball_red_high_res.png" id="2_4opyw"]
+[ext_resource type="Texture2D" uid="uid://lkbrktobekw7" path="res://Assets/ball_blue_high_res.png" id="3_pkvn5"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_y4u2a"]
 radius = 4.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_8w31r"]
-radius = 4.0
+radius = 5.0
 
 [node name="Pong" type="Pong" node_paths=PackedStringArray("hurtbox")]
-speed = 300.0
+speed = 500.0
 hurtbox = NodePath("HurtBox")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_y4u2a")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="WhitePong" type="Sprite2D" parent="."]
+visible = false
 texture_filter = 1
 position = Vector2(1.19209e-07, -2.38419e-07)
 scale = Vector2(0.063, 0.063)
 texture = ExtResource("1_8w31r")
 
+[node name="RedPong" type="Sprite2D" parent="."]
+visible = false
+scale = Vector2(0.063, 0.063)
+texture = ExtResource("2_4opyw")
+
+[node name="BluePong" type="Sprite2D" parent="."]
+visible = false
+scale = Vector2(0.063, 0.063)
+texture = ExtResource("3_pkvn5")
+
+[node name="GreenPong" type="Sprite2D" parent="."]
+visible = false
+scale = Vector2(0.063, 0.063)
+texture = ExtResource("3_pkvn5")
+
 [node name="HurtBox" type="Area2D" parent="."]
-collision_layer = 0
+collision_layer = 2
 collision_mask = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HurtBox"]
 shape = SubResource("CircleShape2D_8w31r")
 
 [node name="ColourComponent" type="ColourComponent" parent="."]
+colour = "Blue"
