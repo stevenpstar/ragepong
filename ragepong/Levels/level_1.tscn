@@ -24,7 +24,7 @@ resource_local_to_scene = true
 size = Vector2(16, 120)
 
 [node name="Level1" type="Level" node_paths=PackedStringArray("obstacles", "level_end", "player_start", "pong_start")]
-obstacles = [NodePath("LaserGate"), NodePath("PongLock"), NodePath("StaticPaddleContainer/StaticPaddle")]
+obstacles = [NodePath("LaserGate"), NodePath("PongLock"), NodePath("StaticPaddleContainer/StaticPaddle"), NodePath("LaserGate2")]
 level_end = NodePath("LevelEnd")
 player_start = NodePath("PlayerStart")
 pong_start = NodePath("PongStart")

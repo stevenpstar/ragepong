@@ -29,7 +29,8 @@ size = Vector2(80, 16)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ck3gp"]
 size = Vector2(284.019, 210)
 
-[node name="Level3" instance=ExtResource("1_5lru4")]
+[node name="Level3" node_paths=PackedStringArray("obstacles") instance=ExtResource("1_5lru4")]
+obstacles = [NodePath("LaserGate2"), NodePath("LaserGate3"), NodePath("LaserGate"), NodePath("StaticPaddleContainer")]
 pong_colour = "Red"
 pong_direction = Vector2(-1, 0)
 
@@ -100,9 +101,11 @@ position = Vector2(4, 0)
 shape = SubResource("RectangleShape2D_ay5qi")
 
 [node name="ColorRect" parent="LaserGate2" index="1"]
+offset_left = -88.0
 offset_right = 96.0
 
 [node name="LaserGate3" parent="." index="8" instance=ExtResource("3_ej5lj")]
+starting_colour = "Blue"
 position = Vector2(72, 72)
 rotation = 1.5708
 

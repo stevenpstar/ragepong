@@ -18,6 +18,7 @@ pub struct Player {
     is_dashing: bool,
     slow_broken: bool,
     on_ball: bool,
+    level_finished: bool,
     ball: Option<Gd<Pong>>,
     dash_direction: Vector2,
     #[export]
@@ -77,6 +78,7 @@ impl ICharacterBody2D for Player {
             is_dashing: false,
             slow_broken: false,
             on_ball: false,
+            level_finished: false,
             ball: None,
             dash_direction: Vector2::new(0.0, 0.0),
             can_double_jump: false,
@@ -478,6 +480,7 @@ impl Player {
         };
         self.base_mut().set_position(position);
         self.alive = true;
+        self.level_finished = false;
     }
 
     #[func]
@@ -538,7 +541,6 @@ impl Player {
             if gate.bind().get_is_open() == false && gate_col != player_col {
                 self.kill();
             } else if gate.bind().get_is_open() == false && gate_col == player_col {
-                godot_print!("Resetting dash and jump");
                 self.has_jumped = false;
                 self.jump_count = 0;
                 self.jump_timer = 0.0;
@@ -685,6 +687,14 @@ impl Player {
             Some(cc) => cc
         };
         return colour.bind().get_obj_colour();
+    }
+
+    pub fn set_level_ended(&mut self) {
+        self.level_finished = true;
+    }
+
+    pub fn get_level_ended(&self) -> bool {
+        return self.level_finished;
     }
 
     fn set_player_colour(&mut self, colour: &Colour) {

@@ -25,6 +25,7 @@ pub struct Pong {
     vel_x: f32,
     vel_y: f32,
     game_speed: f32,
+    level_finished: bool,
     base: Base<CharacterBody2D>,
 }
 
@@ -46,6 +47,7 @@ impl ICharacterBody2D for Pong {
             vel_x: 1.0,
             vel_y: 1.0,
             game_speed: 1.0,
+            level_finished: false,
             base,
         }
     }
@@ -140,13 +142,18 @@ impl Pong {
             Some(sp) => sp.get_position()
         };
         self.base_mut().set_position(position);
+
         self.vel_x = self.start_dir.x;
         self.vel_y = self.start_dir.y;
         self.locked = false;
+        self.level_finished = false;
     }
 
     #[func]
     pub fn lock(&mut self, lock: Gd<PongLock>) {
+        if self.level_finished {
+            return;
+        }
         self.locked = true;
         self.locked_position = lock.get_position();
     }
@@ -164,6 +171,21 @@ impl Pong {
     #[func]
     pub fn get_pong_speed(&self) -> f64 {
         return self.speed;
+    }
+
+    #[func]
+    pub fn set_level_finished(&mut self, fin: bool) {
+        self.level_finished = fin;
+    }
+
+    #[func]
+    pub fn get_level_fin(&self) -> bool {
+        return self.level_finished;
+    }
+
+    #[func]
+    pub fn is_locked(&self) -> bool {
+        return self.locked;
     }
     
     pub fn set_pong_colour(&mut self, col: &Colour) {
@@ -212,7 +234,7 @@ impl Pong {
             let mut gate = area.cast::<LaserGate>();
             let ball_colour = self.get_colour();
             let laser_gate_colour = gate.bind_mut().get_colour();
-            if ball_colour != laser_gate_colour {
+            if ball_colour != laser_gate_colour && gate.bind().get_is_open() {
                 self.reset();
                 godot_print!("should reset");
             } else {

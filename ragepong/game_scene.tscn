@@ -34,14 +34,15 @@ start_point = NodePath("../PongStart")
 position = Vector2(32, 584)
 metadata/_edit_group_ = true
 
-[node name="GameState" type="GameState" parent="." node_paths=PackedStringArray("player", "balls", "player_start", "pong_start")]
+[node name="GameState" type="GameState" parent="." node_paths=PackedStringArray("player", "balls", "player_start", "pong_start", "char_state")]
 player = NodePath("../Player")
 balls = [NodePath("../Pong")]
 player_start = NodePath("../PlayerStart")
 pong_start = NodePath("../PongStart")
 levels = Array[String](["test_level", "level_1"])
 base_path = "res://Levels/"
-level_str = "movement_testing.tscn"
+level_str = "level_1.tscn"
+char_state = NodePath("../DebugUI/CharacterState")
 
 [node name="PlayerStart" type="Node2D" parent="."]
 position = Vector2(-31, 257)
@@ -52,3 +53,24 @@ position = Vector2(-31, 243)
 [node name="Camera" type="GameCamera" parent="."]
 anchor_mode = 0
 position_smoothing_enabled = true
+
+[node name="ColorRect" type="ColorRect" parent="Camera"]
+offset_left = -88.0
+offset_top = -48.0
+offset_right = 1248.0
+offset_bottom = 728.0
+color = Color(0, 0, 0, 0)
+
+[node name="DebugUI" type="Control" parent="."]
+z_index = 2000
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="CharacterState" type="RichTextLabel" parent="DebugUI"]
+layout_mode = 0
+offset_right = 200.0
+offset_bottom = 40.0
+text = "Character State
+"

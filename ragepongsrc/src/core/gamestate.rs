@@ -1,6 +1,6 @@
-use godot::{builtin::{Array, GString}, classes::{ INode, Input, Node, Node2D, PackedScene, ResourceLoader}, global::{godot_error, godot_print}, obj::{Base, Gd, WithBaseField}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::{Array, GString, StringName, Vector2}, classes::{ Engine, INode, Input, Node, Node2D, PackedScene, ResourceLoader, RichTextLabel}, global::{godot_error, godot_print}, obj::{Base, Gd, WithBaseField}, prelude::{godot_api, GodotClass}};
 
-use crate::player::pong::Pong;
+use crate::{engine::game::Game, player::pong::Pong};
 use crate::player::player::Player;
 use crate::core::level::Level;
 
@@ -24,6 +24,9 @@ pub struct GameState {
     base_path: GString,
     #[export]
     level_str: GString,
+    #[export]
+    char_state: Option<Gd<RichTextLabel>>,
+    reset_timer: i32,
     current_level: Option<Gd<Level>>,
     base: Base<Node>,
 }
@@ -41,6 +44,8 @@ impl INode for GameState {
             levels: Default::default(),
             base_path: Default::default(),
             level_str: Default::default(),
+            char_state: None,
+            reset_timer: 0,
             current_level: None,
             base,
         }
@@ -79,6 +84,36 @@ impl INode for GameState {
         if self.input.is_action_just_pressed("change_level") {
             self.change_level("res://Levels/level_1.tscn".to_string());
         }
+
+        let player = match &self.player {
+            None => panic!("No player!"),
+            Some(p) => p
+        };
+
+        let state_label = match &mut self.char_state {
+            None => panic!("No state label!"),
+            Some(l) => l
+        };
+        let text = if player.bind().get_level_ended() {
+            "finished"
+        } else {
+            "not finished"
+        };
+        state_label.set_text(text);
+        let mut game = match Engine::singleton().get_singleton(&StringName::from("Game")) {
+            None => panic!("No game singleton"),
+            Some(game) => game.cast::<Game>()
+        };
+
+        if game.bind().is_resetting() == true {
+            self.reset_timer += 1;
+            if self.reset_timer > 2 {
+                // we need to wait a tick so area2D signals aren't sent
+                self.reset_timer = 0;
+                game.bind_mut().set_resetting(false);
+            }
+        }
+
     }
 }
 
@@ -101,6 +136,13 @@ impl GameState {
     }
 
     pub fn reset_game(&mut self) {
+
+        let mut game = match Engine::singleton().get_singleton(&StringName::from("Game")) {
+            None => panic!("No game singleton"),
+            Some(game) => game.cast::<Game>()
+        };
+        game.bind_mut().set_resetting(true);
+
         let level = match &self.current_level {
             None => {
                 godot_print!("No current level in gamestate");
@@ -108,20 +150,24 @@ impl GameState {
             },
             Some(lvl) => lvl
         };
+
         level.bind().reset_obstacles();
 
         match &mut self.player {
             None => panic!("Player not found"),
             Some(player) => player.bind_mut().reset_player()
         };
+
+
         for mut pong in self.balls.iter_shared() {
+            pong.bind_mut().set_level_finished(true);
             pong.bind_mut().reset();
-            godot_print!("heyo")
         }
+
     }
 
     fn change_level(&mut self, level_path: String) {
-        godot_print!("Trying to change level!");
+
         let this = self.to_gd();
 
         if self.base().get_child_count() > 0 {
@@ -175,9 +221,9 @@ impl GameState {
                 pong.bind_mut().set_start_dir(next_level.bind().get_pong_direction());
                 let col = next_level.bind().get_png_colour();
                 pong.bind_mut().set_pong_colour(&col);
+                pong.bind_mut().set_level_finished(true);
             }
         }
-
 
         level_end.signals()
             .level_ended()

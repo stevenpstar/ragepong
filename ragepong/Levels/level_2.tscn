@@ -29,7 +29,8 @@ size = Vector2(141, 202)
 resource_local_to_scene = true
 size = Vector2(112, 16)
 
-[node name="LevelTemplate" instance=ExtResource("1_ll1bl")]
+[node name="LevelTemplate" node_paths=PackedStringArray("obstacles") instance=ExtResource("1_ll1bl")]
+obstacles = [NodePath("LaserGate"), NodePath("PongLock")]
 pong_direction = Vector2(0, -1)
 
 [node name="LevelEnd" parent="." index="0"]

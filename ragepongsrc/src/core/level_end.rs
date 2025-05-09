@@ -1,4 +1,6 @@
-use godot::{builtin::GString, classes::{Area2D, INode2D, Node2D}, global::godot_print, obj::{Base, Gd, WithBaseField, WithUserSignals}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::{GString, StringName}, classes::{Area2D, Engine, INode2D, Node2D}, global::godot_print, obj::{Base, Gd, WithBaseField, WithUserSignals}, prelude::{godot_api, GodotClass}};
+
+use crate::{engine::game::Game, player::player::Player};
 
 #[derive(GodotClass)]
 #[class(base=Node2D)]
@@ -51,14 +53,21 @@ impl LevelEnd {
 
     fn on_body_entered(&mut self, body: Gd<Node2D>) {
         if body.get_class() == "Player".into() {
+            let mut game = match Engine::singleton().get_singleton(&StringName::from("Game")) {
+                None => panic!("No game singleton"),
+                Some(game) => game.cast::<Game>()
+            };
+
+            let mut player = body.cast::<Player>();
             let level_path: GString;
             {
                 level_path = self.get_level_path();
             }
-            godot_print!("Level should end!");
-            self.signals().level_ended().emit(level_path.to_string());
+            if game.bind().is_resetting() == false {
+                player.bind_mut().set_level_ended();
+                self.signals().level_ended().emit(level_path.to_string());
+            }
         }
-
     }
 
     #[signal]
