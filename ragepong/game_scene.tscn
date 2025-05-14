@@ -2,57 +2,72 @@
 
 [ext_resource type="PackedScene" uid="uid://cm7458rx6popx" path="res://player.tscn" id="2_ia1lp"]
 [ext_resource type="PackedScene" uid="uid://bd4bjlwqecxbq" path="res://pong.tscn" id="3_sasra"]
+[ext_resource type="PackedScene" uid="uid://n7rqmu1bory6" path="res://ball_trail.tscn" id="3_v1wow"]
 
-[sub_resource type="Curve" id="Curve_sasra"]
-_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="Gradient" id="Gradient_sasra"]
-offsets = PackedFloat32Array(0, 0.432099, 0.691358)
-colors = PackedColorArray(1, 1, 1, 0.635294, 0.772549, 0.772549, 0.772549, 0.396078, 1, 1, 1, 0)
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_po0ka"]
+resource_local_to_scene = true
+load_path = "res://.godot/imported/ball_high_res.png-e683e8ea8bbbfee6f9a3427d0c11a389.ctex"
 
 [node name="Game" type="Node2D"]
 
 [node name="Player" parent="." node_paths=PackedStringArray("start_point") instance=ExtResource("2_ia1lp")]
+speed = 20.0
+max_speed = 200.0
+jump_velocity = -40.0
 mkb = false
 start_point = NodePath("../PlayerStart")
 position = Vector2(-68, 336)
 metadata/_edit_group_ = true
 
-[node name="BallTrail" type="BallTrail" parent="." node_paths=PackedStringArray("pong")]
-pong = NodePath("../Pong")
-points = PackedVector2Array(314, 560)
-width = 8.0
-width_curve = SubResource("Curve_sasra")
-gradient = SubResource("Gradient_sasra")
-begin_cap_mode = 2
-end_cap_mode = 2
-
-[node name="Pong" parent="." node_paths=PackedStringArray("start_point") instance=ExtResource("3_sasra")]
-speed = 250.0
-start_point = NodePath("../PongStart")
-position = Vector2(32, 584)
-metadata/_edit_group_ = true
-
-[node name="GameState" type="GameState" parent="." node_paths=PackedStringArray("player", "balls", "player_start", "pong_start", "char_state")]
+[node name="GameState" type="GameState" parent="." node_paths=PackedStringArray("player", "balls", "player_start", "white_pong_start", "blue_pong_start", "red_pong_start", "green_pong_start", "char_state", "camera")]
 player = NodePath("../Player")
-balls = [NodePath("../Pong")]
+balls = [NodePath("../WhitePong"), NodePath("../BluePong"), NodePath("../RedPong"), NodePath("../GreenPong")]
 player_start = NodePath("../PlayerStart")
-pong_start = NodePath("../PongStart")
+white_pong_start = NodePath("../WhitePongStart")
+blue_pong_start = NodePath("../BluePongStart")
+red_pong_start = NodePath("../RedPongStart")
+green_pong_start = NodePath("../GreenPongStart")
 levels = Array[String](["test_level", "level_1"])
 base_path = "res://Levels/"
-level_str = "level_1.tscn"
-char_state = NodePath("../DebugUI/CharacterState")
+level_str = "level_3.tscn"
+char_state = NodePath("../Camera/DebugUI/CharacterState")
+camera = NodePath("../Camera")
 
 [node name="PlayerStart" type="Node2D" parent="."]
 position = Vector2(-31, 257)
 
-[node name="PongStart" type="Node2D" parent="."]
+[node name="WhitePongStart" type="Node2D" parent="."]
+position = Vector2(-31, 243)
+
+[node name="RedPongStart" type="Node2D" parent="."]
+position = Vector2(-31, 243)
+
+[node name="BluePongStart" type="Node2D" parent="."]
+position = Vector2(-31, 243)
+
+[node name="GreenPongStart" type="Node2D" parent="."]
 position = Vector2(-31, 243)
 
 [node name="Camera" type="GameCamera" parent="."]
 anchor_mode = 0
 position_smoothing_enabled = true
+position_smoothing_speed = 3.0
+metadata/_edit_group_ = true
+metadata/_edit_lock_ = true
+
+[node name="DebugUI" type="Control" parent="Camera"]
+z_index = 2000
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="CharacterState" type="RichTextLabel" parent="Camera/DebugUI"]
+layout_mode = 0
+offset_right = 200.0
+offset_bottom = 40.0
+text = "Character State
+"
 
 [node name="ColorRect" type="ColorRect" parent="Camera"]
 offset_left = -88.0
@@ -61,16 +76,35 @@ offset_right = 1248.0
 offset_bottom = 728.0
 color = Color(0, 0, 0, 0)
 
-[node name="DebugUI" type="Control" parent="."]
-z_index = 2000
-layout_mode = 3
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="WhitePong" parent="." node_paths=PackedStringArray("start_point") instance=ExtResource("3_sasra")]
+start_point = NodePath("../WhitePongStart")
 
-[node name="CharacterState" type="RichTextLabel" parent="DebugUI"]
-layout_mode = 0
-offset_right = 200.0
-offset_bottom = 40.0
-text = "Character State
-"
+[node name="PongSprite" parent="WhitePong" index="1"]
+texture = SubResource("CompressedTexture2D_po0ka")
+
+[node name="WhiteBallTrail" parent="." node_paths=PackedStringArray("pong") instance=ExtResource("3_v1wow")]
+pong = NodePath("../WhitePong")
+
+[node name="BluePong" parent="." node_paths=PackedStringArray("start_point") instance=ExtResource("3_sasra")]
+speed = 200.0
+start_point = NodePath("../BluePongStart")
+col = "Blue"
+
+[node name="BlueBallTrail" parent="." node_paths=PackedStringArray("pong") instance=ExtResource("3_v1wow")]
+pong = NodePath("../BluePong")
+
+[node name="RedPong" parent="." node_paths=PackedStringArray("start_point") instance=ExtResource("3_sasra")]
+start_point = NodePath("../RedPongStart")
+col = "Red"
+
+[node name="RedBallTrail" parent="." node_paths=PackedStringArray("pong") instance=ExtResource("3_v1wow")]
+pong = NodePath("../RedPong")
+
+[node name="GreenPong" parent="." node_paths=PackedStringArray("start_point") instance=ExtResource("3_sasra")]
+start_point = NodePath("../GreenPongStart")
+col = "Green"
+
+[node name="GreenBallTrail" parent="." node_paths=PackedStringArray("pong") instance=ExtResource("3_v1wow")]
+pong = NodePath("../GreenPong")
+
+[editable path="WhitePong"]

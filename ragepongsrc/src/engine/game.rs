@@ -1,4 +1,4 @@
-use godot::{builtin::StringName, classes::{Engine, Object}, global::godot_error, obj::{Base, Gd}, prelude::{godot_api, GodotClass}};
+use godot::{classes:: Object, obj::Base, prelude::{godot_api, GodotClass}};
 
 #[derive(GodotClass)]
 #[class(init, base=Object)]

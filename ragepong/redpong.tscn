@@ -1,12 +1,15 @@
-[gd_scene load_steps=3 format=3 uid="uid://cumw00hjgriis"]
+[gd_scene load_steps=3 format=3 uid="uid://bcax5g0q3cwwu"]
 
 [ext_resource type="PackedScene" uid="uid://bd4bjlwqecxbq" path="res://pong.tscn" id="1_rnihx"]
-[ext_resource type="Texture2D" uid="uid://cfw3h4b01n14g" path="res://Assets/ball_red_high_res.png" id="2_vvj5q"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_rnihx"]
+resource_local_to_scene = true
+load_path = "res://.godot/imported/ball_high_res.png-e683e8ea8bbbfee6f9a3427d0c11a389.ctex"
 
 [node name="RedPong" instance=ExtResource("1_rnihx")]
 
-[node name="Sprite2D" parent="." index="1"]
-texture = ExtResource("2_vvj5q")
+[node name="PongSprite" parent="." index="1"]
+texture = SubResource("CompressedTexture2D_rnihx")
 
 [node name="ColourComponent" parent="." index="3"]
 colour = "Red"

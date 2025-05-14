@@ -53,7 +53,7 @@ impl LevelEnd {
 
     fn on_body_entered(&mut self, body: Gd<Node2D>) {
         if body.get_class() == "Player".into() {
-            let mut game = match Engine::singleton().get_singleton(&StringName::from("Game")) {
+            let game = match Engine::singleton().get_singleton(&StringName::from("Game")) {
                 None => panic!("No game singleton"),
                 Some(game) => game.cast::<Game>()
             };

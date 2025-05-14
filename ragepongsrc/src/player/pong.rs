@@ -1,4 +1,4 @@
-use godot::{builtin::Vector2, classes::{Area2D, CharacterBody2D, ICharacterBody2D, Node2D, Sprite2D}, global::godot_print, obj::{Base, Gd, OnReady, WithBaseField}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::{Color, Vector2}, classes::{Area2D, CharacterBody2D, ICharacterBody2D, Node2D, Sprite2D}, global::godot_print, obj::{Base, Gd, OnReady, WithBaseField}, prelude::{godot_api, GodotClass}};
 
 use crate::{core::{colour_component::ColourComponent, colours::Colour}, obstacles::{laser_gate::LaserGate, pong_lock::PongLock}};
 
@@ -15,12 +15,13 @@ pub struct Pong {
     start_dir: Vector2,
     #[export]
     hurtbox: Option<Gd<Area2D>>,
-    white_sprite: OnReady<Gd<Sprite2D>>,
-    red_sprite: OnReady<Gd<Sprite2D>>,
-    blue_sprite: OnReady<Gd<Sprite2D>>,
-    green_sprite: OnReady<Gd<Sprite2D>>,
+    #[export]
+    col: Colour,
+    #[export]
+    sprite: Option<Gd<Sprite2D>>,
     colour: OnReady<Gd<ColourComponent>>,
     locked: bool,
+    disabled: bool,
     locked_position: Vector2,
     vel_x: f32,
     vel_y: f32,
@@ -37,12 +38,11 @@ impl ICharacterBody2D for Pong {
             start_point: None,
             start_dir: Vector2::new(0.0, 0.0),
             hurtbox: None,
+            col: Colour::White,
+            sprite: None,
             colour: OnReady::from_node("ColourComponent"),
-            white_sprite: OnReady::from_node("WhitePong"),
-            red_sprite: OnReady::from_node("RedPong"),
-            blue_sprite: OnReady::from_node("BluePong"),
-            green_sprite: OnReady::from_node("GreenPong"),
             locked: false,
+            disabled: false,
             locked_position: Vector2::new(0.0, 0.0),
             vel_x: 1.0,
             vel_y: 1.0,
@@ -76,6 +76,9 @@ impl ICharacterBody2D for Pong {
     }
 
     fn physics_process(&mut self, _delta: f64) {
+        if self.disabled {
+            return;
+        }
         if !self.locked {
             {
                 let vel_x: f32 = self.vel_x * self.game_speed * self.speed as f32;
@@ -105,6 +108,11 @@ impl ICharacterBody2D for Pong {
 
                     if collider.get_class() != "Player".into() {
                         self.reverse_direction();
+                    } else {
+                        let player = collider.cast::<Player>();
+                        if player.bind().get_colour() != Colour::Blue {
+                            self.reverse_direction();
+                        }
                     }
                 }
             }
@@ -137,6 +145,7 @@ impl Pong {
     }
 
     pub fn reset(&mut self) {
+        self.disabled = false;
         let position = match &self.start_point {
             None => Vector2::new(0.0, 0.0),
             Some(sp) => sp.get_position()
@@ -147,6 +156,9 @@ impl Pong {
         self.vel_y = self.start_dir.y;
         self.locked = false;
         self.level_finished = false;
+        if self.vel_x == 0.0 && self.vel_y == 0.0 {
+            self.disabled = true;
+        }
     }
 
     #[func]
@@ -164,8 +176,9 @@ impl Pong {
     }
 
     #[func]
-    pub fn get_colour(&mut self) -> Colour {
-        return self.colour.bind().get_obj_colour();
+    pub fn get_colour(&self) -> Colour {
+        Colour::get_colour(&self.col)
+//        return self.colour.bind().get_obj_colour();
     }
 
     #[func]
@@ -188,23 +201,35 @@ impl Pong {
         return self.locked;
     }
     
-    pub fn set_pong_colour(&mut self, col: &Colour) {
-
-        let colour_comp = &mut self.colour;
-
-        colour_comp.bind_mut().set_obj_colour(col);
-
-        self.white_sprite.set_visible(false);
-        self.red_sprite.set_visible(false);
-        self.blue_sprite.set_visible(false);
-        self.green_sprite.set_visible(false);
-        match self.get_colour() {
-            Colour::White => self.white_sprite.set_visible(true),
-            Colour::Red => self.red_sprite.set_visible(true),
-            Colour::Blue => self.blue_sprite.set_visible(true),
-            Colour::Green => self.green_sprite.set_visible(true),
+    pub fn set_pong_colour(&mut self, colour: &Colour) {
+        let sprite = match &mut self.sprite {
+            None => {
+                godot_print!("Player should have a character sprite");
+                panic!("No character sprite for player!");
+            },
+            Some(spr) => spr
         };
+
+        match colour {
+            Colour::White => {
+                sprite.set_modulate(Color::from_rgb(1.0, 1.0, 1.0));
+                self.col = Colour::White;
+            },
+            Colour::Blue => {
+                sprite.set_modulate(Color::from_rgb(0.0, 0.0, 1.0));
+                self.col = Colour::Blue;
+            },
+            Colour::Red => {
+                sprite.set_modulate(Color::from_rgb(1.0, 0.0, 0.0));
+                self.col = Colour::Red;
+            },
+            Colour::Green => {
+                sprite.set_modulate(Color::from_rgb(0.0, 1.0, 0.0));
+                self.col = Colour::Green;
+            },
+       };
     }
+
 
     pub fn update_game_speed(&mut self, speed: f32) {
         self.game_speed = speed;
@@ -220,9 +245,6 @@ impl Pong {
             Some(p) => p
         };
 
-
-        godot_print!("parent area entered {}", parent.get_class());
-
         if parent.get_class() == "Player".into() {
             let mut player = parent.cast::<Player>();
             let colour = self.get_colour();
@@ -230,16 +252,12 @@ impl Pong {
                 player.bind_mut().kill();
             }
         } else if area.get_class() == "LaserGate".into() {
-            godot_print!("Hit laser gate!");
             let mut gate = area.cast::<LaserGate>();
             let ball_colour = self.get_colour();
             let laser_gate_colour = gate.bind_mut().get_colour();
-            if ball_colour != laser_gate_colour && gate.bind().get_is_open() {
+            if ball_colour != laser_gate_colour && !gate.bind().get_is_open() && ball_colour != Colour::White {
                 self.reset();
-                godot_print!("should reset");
-            } else {
-                godot_print!("should not reset");
-            }
+            }  
         }
 
     }

@@ -1,4 +1,4 @@
-use godot::{builtin::{Array, StringName}, classes::{Area2D, Engine, IArea2D, Node2D}, global::godot_print, obj::{Base, Gd, WithBaseField, WithUserSignals}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::{Array, StringName}, classes::{Area2D, Engine, IArea2D, Node2D}, obj::{Base, Gd, WithBaseField, WithUserSignals}, prelude::{godot_api, GodotClass}};
 
 use crate::{engine::game::Game, player::pong::Pong};
 

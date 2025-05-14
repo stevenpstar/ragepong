@@ -19,6 +19,10 @@ pub struct Player {
     slow_broken: bool,
     on_ball: bool,
     level_finished: bool,
+    #[export]
+    double_jump_enabled: bool,
+    #[export]
+    dash_enabled: bool,
     ball: Option<Gd<Pong>>,
     dash_direction: Vector2,
     #[export]
@@ -79,6 +83,8 @@ impl ICharacterBody2D for Player {
             slow_broken: false,
             on_ball: false,
             level_finished: false,
+            double_jump_enabled: false,
+            dash_enabled: false,
             ball: None,
             dash_direction: Vector2::new(0.0, 0.0),
             can_double_jump: false,
@@ -320,7 +326,9 @@ impl ICharacterBody2D for Player {
                     None => panic!("Ball not found!"),
                     Some(b) => b
                 };
-                new_vel.y = 0.0 + -ball.bind().get_pong_speed() as f32 * 1.7 as f32;
+                if ball.bind().get_colour() == Colour::Blue {
+                    new_vel.y = 0.0 + -ball.bind().get_pong_speed() as f32 * 1.7 as f32;
+                } 
             }
 
             self.base_mut().set_velocity(new_vel);
@@ -414,6 +422,9 @@ impl ICharacterBody2D for Player {
                     let ball_col = b.bind_mut().get_colour();
                     b.bind_mut().unlock();
                     b.bind_mut().hit_direction(hit_direction);
+                    if self.get_colour() == Colour::Green || b.bind().get_colour() == Colour::Green {
+                        b.bind_mut().set_pong_colour(&self.get_colour());
+                    }
                     self.set_player_colour(&ball_col);
                 } 
             }
@@ -581,6 +592,9 @@ impl Player {
     }
 
     fn can_dash(&mut self) -> bool {
+        if !self.dash_enabled {
+            return false;
+        }
         if self.has_dashed {
             return false;
         }
@@ -636,6 +650,9 @@ impl Player {
     }
 
     fn can_dbl_jump(&mut self) -> bool {
+        if !self.double_jump_enabled {
+            return false;
+        }
         if self.can_double_jump && self.jump_count < 2 {
             self.jump_count += 1;
             return true;
@@ -678,7 +695,7 @@ impl Player {
 
     }
 
-    pub fn get_colour(&mut self) -> Colour {
+    pub fn get_colour(&self) -> Colour {
         let colour = match &self.colour_component {
             None => {
                 godot_print!("No colour component on player!");
@@ -691,10 +708,6 @@ impl Player {
 
     pub fn set_level_ended(&mut self) {
         self.level_finished = true;
-    }
-
-    pub fn get_level_ended(&self) -> bool {
-        return self.level_finished;
     }
 
     fn set_player_colour(&mut self, colour: &Colour) {

@@ -1,8 +1,10 @@
-use godot::{builtin::{Array, GString, StringName, Vector2}, classes::{ Engine, INode, Input, Node, Node2D, PackedScene, ResourceLoader, RichTextLabel}, global::{godot_error, godot_print}, obj::{Base, Gd, WithBaseField}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::{Array, GString, StringName}, classes::{ Engine, INode, Input, Node, Node2D, PackedScene, ResourceLoader, RichTextLabel}, global::{godot_error, godot_print}, obj::{Base, Gd, WithBaseField}, prelude::{godot_api, GodotClass}};
 
 use crate::{engine::game::Game, player::pong::Pong};
 use crate::player::player::Player;
 use crate::core::level::Level;
+
+use super::game_camera::GameCamera;
 
 #[derive(GodotClass)]
 #[class(base=Node)]
@@ -15,7 +17,13 @@ pub struct GameState {
     #[export]
     player_start: Option<Gd<Node2D>>,
     #[export]
-    pong_start: Option<Gd<Node2D>>,
+    white_pong_start: Option<Gd<Node2D>>,
+    #[export]
+    blue_pong_start: Option<Gd<Node2D>>,
+    #[export]
+    red_pong_start: Option<Gd<Node2D>>,
+    #[export]
+    green_pong_start: Option<Gd<Node2D>>,
     #[export]
     gamespeed: f64,
     #[export]
@@ -26,6 +34,8 @@ pub struct GameState {
     level_str: GString,
     #[export]
     char_state: Option<Gd<RichTextLabel>>,
+    #[export]
+    camera: Option<Gd<GameCamera>>,
     reset_timer: i32,
     current_level: Option<Gd<Level>>,
     base: Base<Node>,
@@ -39,12 +49,16 @@ impl INode for GameState {
             player: None,
             balls: Default::default(),
             player_start: None,
-            pong_start: None,
+            white_pong_start: None,
+            red_pong_start: None,
+            blue_pong_start: None,
+            green_pong_start: None,
             gamespeed: 1.0,
             levels: Default::default(),
             base_path: Default::default(),
             level_str: Default::default(),
             char_state: None,
+            camera: None,
             reset_timer: 0,
             current_level: None,
             base,
@@ -85,21 +99,12 @@ impl INode for GameState {
             self.change_level("res://Levels/level_1.tscn".to_string());
         }
 
-        let player = match &self.player {
-            None => panic!("No player!"),
-            Some(p) => p
-        };
-
         let state_label = match &mut self.char_state {
             None => panic!("No state label!"),
             Some(l) => l
         };
-        let text = if player.bind().get_level_ended() {
-            "finished"
-        } else {
-            "not finished"
-        };
-        state_label.set_text(text);
+        let fps: GString = Engine::get_frames_per_second(&Engine::singleton()).to_string().into();
+        state_label.set_text(&fps);
         let mut game = match Engine::singleton().get_singleton(&StringName::from("Game")) {
             None => panic!("No game singleton"),
             Some(game) => game.cast::<Game>()
@@ -158,11 +163,17 @@ impl GameState {
             Some(player) => player.bind_mut().reset_player()
         };
 
-
         for mut pong in self.balls.iter_shared() {
-            pong.bind_mut().set_level_finished(true);
+            //pong.bind_mut().set_level_finished(true);
             pong.bind_mut().reset();
         }
+
+        let level_cam_start = level.bind().get_starting_camera();
+        let cam = match &mut self.camera {
+            None => panic!("Camera should be set"),
+            Some(c) => c
+        };
+        cam.set_global_position(level_cam_start);
 
     }
 
@@ -195,7 +206,7 @@ impl GameState {
         }
 
         {
-            let pong_start = match &mut self.pong_start {
+            let white_pong_start = match &mut self.white_pong_start {
                 None => {
                     godot_error!("No pong start in gamestate");
                     panic!("uh oh!")
@@ -203,7 +214,37 @@ impl GameState {
                 Some(ps) => ps
             };
 
-            pong_start.set_position(next_level.bind().get_pong_start_position());
+            white_pong_start.set_position(next_level.bind().get_pong_start_position("white".to_string()));
+
+            let blue_pong_start = match &mut self.blue_pong_start {
+                None => {
+                    godot_error!("No pong start in gamestate");
+                    panic!("uh oh!")
+                },
+                Some(ps) => ps
+            };
+
+            blue_pong_start.set_position(next_level.bind().get_pong_start_position("blue".to_string()));
+
+            let red_pong_start = match &mut self.red_pong_start {
+                None => {
+                    godot_error!("No pong start in gamestate");
+                    panic!("uh oh!")
+                },
+                Some(ps) => ps
+            };
+
+            red_pong_start.set_position(next_level.bind().get_pong_start_position("red".to_string()));
+
+            let green_pong_start = match &mut self.green_pong_start {
+                None => {
+                    godot_error!("No pong start in gamestate");
+                    panic!("uh oh!")
+                },
+                Some(ps) => ps
+            };
+
+            green_pong_start.set_position(next_level.bind().get_pong_start_position("green".to_string()));
 
         }
 
@@ -218,12 +259,12 @@ impl GameState {
 
         {
             for mut pong in &mut self.balls.iter_shared() {
-                pong.bind_mut().set_start_dir(next_level.bind().get_pong_direction());
-                let col = next_level.bind().get_png_colour();
+                let col = pong.bind_mut().get_colour();
+                pong.bind_mut().set_start_dir(next_level.bind().get_pong_direction(&col));
                 pong.bind_mut().set_pong_colour(&col);
-                pong.bind_mut().set_level_finished(true);
             }
         }
+
 
         level_end.signals()
             .level_ended()

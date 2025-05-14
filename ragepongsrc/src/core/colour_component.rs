@@ -1,4 +1,4 @@
-use godot::{classes::{INode, Node}, obj::Base, prelude::{godot_api, GodotClass}};
+use godot::{classes::{INode, Node}, global::godot_print, obj::Base, prelude::{godot_api, GodotClass}};
 
 use super::colours::Colour;
 
@@ -35,12 +35,15 @@ impl ColourComponent {
     }
 
     pub fn get_obj_colour(&self) -> Colour {
+        godot_print!("Getting obj colour");
         let col =  match &self.colour {
             Colour::White => Colour::White,
             Colour::Red => Colour::Red,
             Colour::Blue => Colour::Blue,
             Colour::Green => Colour::Green,
         };
+
+        godot_print!("Colour: {}", col);
 
         return col;
     }

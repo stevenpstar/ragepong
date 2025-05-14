@@ -6,10 +6,13 @@
 resource_local_to_scene = true
 size = Vector2(14, 16)
 
-[node name="LevelTemplate" type="Level" node_paths=PackedStringArray("level_end", "player_start", "pong_start")]
+[node name="LevelTemplate" type="Level" node_paths=PackedStringArray("level_end", "player_start", "white_pong_start", "blue_pong_start", "red_pong_start", "green_pong_start")]
 level_end = NodePath("LevelEnd")
 player_start = NodePath("PlayerStart")
-pong_start = NodePath("PongStart")
+white_pong_start = NodePath("WhitePongStart")
+blue_pong_start = NodePath("BluePongStart")
+red_pong_start = NodePath("RedPongStart")
+green_pong_start = NodePath("GreenPongStart")
 
 [node name="LevelEnd" type="LevelEnd" parent="." node_paths=PackedStringArray("area")]
 area = NodePath("Area2D")
@@ -23,7 +26,16 @@ shape = SubResource("RectangleShape2D_owxfo")
 [node name="PlayerStart" type="Node2D" parent="."]
 position = Vector2(56, -16)
 
-[node name="PongStart" type="Node2D" parent="."]
+[node name="WhitePongStart" type="Node2D" parent="."]
+position = Vector2(40, -16)
+
+[node name="RedPongStart" type="Node2D" parent="."]
+position = Vector2(40, -16)
+
+[node name="BluePongStart" type="Node2D" parent="."]
+position = Vector2(40, -16)
+
+[node name="GreenPongStart" type="Node2D" parent="."]
 position = Vector2(40, -16)
 
 [node name="TileMapLayer" parent="." instance=ExtResource("1_gbce7")]

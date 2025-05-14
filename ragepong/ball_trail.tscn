@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3 uid="uid://n7rqmu1bory6"]
+
+[sub_resource type="Curve" id="Curve_sasra"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Gradient" id="Gradient_sasra"]
+offsets = PackedFloat32Array(0, 0.432099, 0.691358)
+colors = PackedColorArray(1, 1, 1, 0.635294, 0.772549, 0.772549, 0.772549, 0.396078, 1, 1, 1, 0)
+
+[node name="BallTrail" type="BallTrail"]
+points = PackedVector2Array(314, 560)
+width = 8.0
+width_curve = SubResource("Curve_sasra")
+gradient = SubResource("Gradient_sasra")
+begin_cap_mode = 2
+end_cap_mode = 2

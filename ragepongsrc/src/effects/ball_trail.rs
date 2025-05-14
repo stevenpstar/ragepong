@@ -26,7 +26,7 @@ impl ILine2D for BallTrail {
     fn process(&mut self, _delta: f64) {
         let pong_position = match &self.pong {
             None => panic!("No pong attached to line!"),
-            Some(p) => p.get_position(),
+            Some(p) => p.get_global_position(),
         };
 
         self.points.push_front(pong_position);

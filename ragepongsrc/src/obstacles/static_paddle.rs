@@ -1,6 +1,6 @@
-use godot::{builtin::Vector2, classes::{ CollisionShape2D, IAnimatableBody2D, Node2D, AnimatableBody2D}, global::godot_print, obj::{Base, Gd, OnReady, WithBaseField}, prelude::{godot_api, GodotClass}};
+use godot::{builtin::Vector2, classes::{ CollisionShape2D, IAnimatableBody2D, Node2D, AnimatableBody2D}, global::godot_print, obj::{Base, Gd, WithBaseField}, prelude::{godot_api, GodotClass}};
 
-use crate::player::pong::Pong;
+use crate::{core::colours::Colour, player::pong::Pong};
 
 #[derive(GodotClass)]
 #[class(base=AnimatableBody2D)]
@@ -15,7 +15,9 @@ pub struct StaticPaddle {
     max_point: Option<Gd<Node2D>>,
     #[export]
     bounds: Option<Gd<CollisionShape2D>>,
-    pong: OnReady<Gd<Pong>>,
+    pong: Option<Gd<Pong>>,
+    #[export]
+    colour: Colour,
     base: Base<AnimatableBody2D>,
 }
 
@@ -28,9 +30,23 @@ impl IAnimatableBody2D for StaticPaddle {
             min_point: None,
             max_point: None,
             bounds: None,
-            pong: OnReady::from_node("/root/Game/Pong"),
+            pong: None,
+            colour: Colour::White,
             base,
         }
+    }
+
+    fn ready(&mut self) {
+
+        let pong_path = match self.colour {
+            Colour::White => "/root/Game/WhitePong",
+            Colour::Blue => "/root/Game/BluePong",
+            Colour::Red => "/root/Game/RedPong",
+            Colour::Green => "/root/Game/GreenPong"
+        };
+
+        self.pong = Some(self.base().get_node_as(pong_path));
+
     }
 
     fn physics_process(&mut self, _delta: f64) {
@@ -59,11 +75,18 @@ impl IAnimatableBody2D for StaticPaddle {
             Some(b) => b.get_shape().unwrap().get_rect()
         };
 
+        let pong = match &self.pong {
+            None => {
+                godot_print!("Pong not found");
+                panic!("pong not found");
+            },
+            Some(p) => p
+        };
 
         let mut target_position_x = self.base().get_global_position().x;
         let mut target_position_y = self.base().get_global_position().y;
         if self.vertical {
-            target_position_y = self.pong.get_position().y;
+            target_position_y = pong.get_position().y;
 
             if target_position_y - bounds.size.y / 2.0 < min_point.y {
                 target_position_y = min_point.y + bounds.size.y / 2.0;
@@ -73,7 +96,7 @@ impl IAnimatableBody2D for StaticPaddle {
 
 
         } else {
-            target_position_x = self.pong.get_position().x;
+            target_position_x = pong.get_position().x;
 
             if target_position_x - bounds.size.x / 2.0 < min_point.x {
                 target_position_x = min_point.x + bounds.size.x / 2.0;
